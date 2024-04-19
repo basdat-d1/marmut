@@ -1,0 +1,72 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>{% block page_title %}Marmut{% endblock %}</title>
+    <link rel="shortcut icon" type="image/png" href="{% static 'favicon.png' %}"/>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap" rel="stylesheet">
+    
+    <script src="https://kit.fontawesome.com/951fd64367.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+            extend: {
+                colors: {
+                    transparent: "transparent",
+                    current: "currentColor",
+                    black: "#102029",
+                    blackdove: "3C4048",
+                    white: "#FFFFFF",
+                    green: "#85C88A",
+                    red: "#BD4B4B",
+                    redbright: "#E76161",
+                    yellow: "#FED049",
+                    yellowbright: "#FFF6BF",
+                    gray: "#73777B",
+                    graybright: "#BBBBBB",
+                    blue: "#39A2DB",
+                    bluebright: "#B0DAFF",
+                    orange: "#FAAB78",
+                    purple: "#BA94D1",
+                },
+                fontFamily: {
+                    poppins: ["Poppins", "sans-serif"],
+                    roboto: ["Roboto", "sans-serif"],
+                    montserrat: ["Montserrat", "sans-serif"],
+                },
+            },
+            screens: {
+                mobile: "360px",
+                tablet: "768px",
+                desktop: "1280px",
+                wide: "1537px",
+            },
+            },
+        };
+    </script>
+    
+    <style>
+        body {
+            background-color: #102029;
+        }
+    </style>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    {% block meta %}{% endblock %}
+</head>    
+
+<!-- CHILD COMPONENT -->
+<body>
+    <div class="font-poppins">
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>
