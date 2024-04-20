@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block meta %}
+<title>Register Atlet</title>
+{% endblock meta %}
+
+{% block content %}
+{% include "components/navbar/navbar_guest.html" %}
+<div class="bg-gradient-to-bl from-indigo-500/20 pt-40 h-screen">
+    <div class="flex justify-center">
+        <div class="bg-gray/20 text-white shadow-2xl border-white rounded-3xl pt-8 px-24">
+            <h1 class="flex justify-center text-4xl mb-10">Register Pengguna</h1>
+            <div class="text-black">
+                <div class="flex gap-10">
+                    <div class="py-2">
+                        <label class="text-white">Email</label><br>
+                        <input type="text" placeholder="example@gmail.com" class="rounded-xl w-64 p-1"/>
+                    </div>
+                    <div class="py-2">
+                        <label class="text-white">Tempat Lahir</label><br>
+                        <input type="text" placeholder="Tempat lahir Anda" class="rounded-xl w-64 p-1"/>
+                    </div>
+                </div>
+                <div class="flex gap-10">
+                    <div class="py-2">
+                        <label class="text-white">Password</label><br>
+                        <input id="password" name="password" type="text" placeholder="Masukkan password Anda" class="rounded-xl w-64 p-1" required/>
+                    </div>
+                    <div class="py-2">
+                        <label class="text-white">Tanggal Lahir</label><br>
+                        <input type="date" id="tanggal_lahir" name="tanggal_lahir" class="rounded-xl w-64 p-1">
+                    </div>
+                </div>
+                <div class="flex gap-10">
+                    <div class="py-2">
+                        <label class="text-white">Nama</label><br>
+                        <input type="text" placeholder="Masukkan nama Anda" class="rounded-xl w-64 p-1"/>
+                    </div>
+                    <div class="py-2">
+                        <label class="text-white">Kota Asal</label><br>
+                        <input type="text" placeholder="Kota asal Anda" class="rounded-xl w-64 p-1"/>
+                    </div>
+                </div>
+                <div class="flex gap-10">
+                    <div class="py-2">
+                        <label class="text-white">Gender</label><br>
+                        <select name="gender" id="gender" class="rounded-xl w-64 p-1">
+                            <option value="Laki">Laki-laki</option>
+                            <option value="Perempuan">Perempuan</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex gap-10">
+                    <div class="py-2">
+                        <label class="text-white">Role</label><br>
+                        <input type="checkbox" id="role" name="role" value="Podcaster">
+                        <label class="text-white">Podcaster</label>
+                        <label class="px-2"></label>
+                        <input type="checkbox" id="role" name="role" value="Artist">
+                        <label class="text-white">Artist</label>
+                        <label class="px-2"></label>
+                        <input type="checkbox" id="role" name="role" value="Songwriter">
+                        <label class="text-white">Songwriter</label>
+                    </div>
+                </div>
+            </div>
+            <div class="flex justify-center gap-5 my-10">
+                <button class="border-2 border-graybright text-graybright rounded-xl py-2 px-6 hover:bg-graybright hover:text-black duration-200"><a href="javascript:history.go(-1)">Cancel</a></button>
+                <button class="border-2 border-green text-green rounded-xl py-2 px-6 hover:bg-green hover:text-black duration-200"><a href="/register/pengguna/">Register</a></button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}

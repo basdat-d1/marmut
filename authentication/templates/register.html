@@ -6,5 +6,16 @@
 {% endblock meta %}
 
 {% block content %}
-<h1>Register Page</h1>
+{% include "components/navbar/navbar_guest.html" %}
+<div class="bg-gradient-to-bl from-indigo-500/20 pt-64 h-screen">
+    <div class="flex justify-center">
+        <div class="text-white">
+            <h1 class="flex justify-center text-4xl py-4">Daftar sebagai</h1>
+            <div class="flex justify-center gap-5 my-5">
+                <button class="border-2 border-blue text-blue rounded-xl py-2 px-6 hover:bg-blue hover:text-black duration-200"><a href="/register/pengguna">Pengguna</a></button>
+                <button class="border-2 border-green text-green rounded-xl py-2 px-6 hover:bg-green hover:text-black duration-200"><a href="/register/label">Label</a></button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock content %}
