@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block meta %}
+<title>Dashboard Pengguna Biasa</title>
+{% endblock meta %}
+
+{% block content %}
+{% include "components/navbar/navbar_pengguna.html" %}
+<div class="bg-gradient-to-bl from-indigo-500/20 pt-28 h-screen">
+    <div class="flex gap-10 justify-center">
+        <h1 class="flex justify-center shadow-2xl text-4xl text-white mb-10">Dashboard Pengguna</h1>
+    </div>
+    <div class="flex gap-10 justify-center">
+        <div class="grid grid-cols-2 gap-y-6 gap-x-24 bg-gray/20 text-white shadow-inner border-white rounded-3xl py-12 px-16">
+            <div>
+                <p class="text-sm opacity-50">Nama</p>
+                <p>{{ nama }}</p>
+            </div>
+            <div>
+                <p class="text-sm opacity-50">Email</p>
+                <p>{{ email }}</p>
+            </div>
+            <div>
+                <p class="text-sm opacity-50">Kota Asal</p>
+                <p>{{ kota_asal }}</p>
+            </div>
+            <div>
+                <p class="text-sm opacity-50">Gender</p>
+                <p>{{ gender }}</p>
+            </div>
+            <div>
+                <p class="text-sm opacity-50">Tempat Lahir</p>
+                <p>{{ tempat_lahir }}</p>
+            </div>
+            <div>
+                <p class="text-sm opacity-50">Tanggal Lahir</p>
+                <p>{{ tanggal_lahir }}</p>
+            </div>
+            <div>
+                <p class="text-sm opacity-50">Role</p>
+                <p>{{ role }}</p>
+            </div>
+            <div>
+                <p class="text-sm opacity-50">Daftar Playlist</p>
+                {% if playlists %}
+                    <ul>
+                        {% for playlist in playlists %}
+                            <li>{{ playlist.name }}</li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p>Belum Memiliki Playlist</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}

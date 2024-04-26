@@ -23,7 +23,7 @@ urlpatterns = [
     # path('album-song/', include('album_song.urls')),
     # path('cek-royalti/', include('cek_royalti.urls')),
     # path('daftar-album-song/', include('daftar_album_song.urls')),
-    # path('dashboard/', include('dashboard.urls')),
+    path('dashboard/', include('dashboard.urls')),
     # path('downloaded-songs/', include('downloaded_songs.urls')),
     # path('langganan-paket/', include('langganan_paket.urls')),
     # path('lihat-chart/', include('lihat_chart.urls')),
