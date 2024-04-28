@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block meta %}
+<title>View Charts</title>
+{% endblock meta %}
+
+{% block content %}
+{% include "components/navbar/navbar_pengguna.html" %}
+<div class="bg-gradient-to-bl from-indigo-500/20 min-h-screen">
+    <div class="container mx-auto p-8 mt-16">
+        <div class="container mx-auto p-8 flex justify-center items-center flex-col"> 
+            <h1 class="text-3xl font-bold text-white mb-4 text-center">Charts</h1>
+        </div>
+        <table class="table-auto w-full border-collapse border border-graybright">
+            <thead>
+                <tr>
+                    <th class="border border-graybright px-4 py-2 text-left text-white">Chart Title</th>
+                    <th class="border border-graybright px-4 py-2 text-left text-white">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for chart in chart %}
+                <tr>
+                    <td class="border border-graybright px-4 py-2 text-white">{{ chart.title }}</td>
+                    <td class="border border-graybright px-4 py-2">
+                        <a href="{% url 'lihat_chart:show_playlist' %}?playlist_type={{ chart.title }}" class="bg-blue-700 hover:bg-blue-800 text-white font-bold py-2 px-4 rounded">See Playlist</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div class="flex justify-center mt-8">
+            <a href="" class="bg-blue-700 hover:bg-blue-800 text-white font-bold py-2 px-4 rounded text-lg">Back</a>
+        </div>
+    </div>
+</div>
+{% endblock content %}

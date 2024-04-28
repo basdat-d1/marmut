@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block meta %}
+<title>Play Podcast</title>
+{% endblock meta %}
+
+{% block content %}
+{% include "components/navbar/navbar_pengguna.html" %}
+<div class="bg-gradient-to-bl from-indigo-500/20">
+    <div class="container mx-auto p-8 mt-16">
+        <div class="container mx-auto p-8 flex justify-center items-center flex-col"> 
+            <h1 class="text-3xl font-bold text-white mb-4 text-center">Podcast</h1>
+        </div>
+
+        {% for podcast in podcasts %}
+        <div class="mb-8">
+            <h2 class="text-2xl font-bold text-white">{{ podcast.title }}</h2>
+            <p class="text-lg text-graybright mb-4">Genre: {{ podcast.genre }}</p>
+            <p class="text-lg text-graybright mb-4">Podcaster: {{ podcast.podcaster }}</p>
+            <p class="text-lg text-graybright mb-4">Duration: {{ podcast.durasi }}</p>
+            <p class="text-lg text-graybright mb-4">Release Date: {{ podcast.tanggal }}</p>
+
+            <table class="table-auto w-full border-collapse border border-graybright">
+                <thead>
+                    <tr>
+                        <th class="border border-graybright px-4 py-2 text-left text-white">Episode</th>
+                        <th class="border border-graybright px-4 py-2 text-left text-white">Description</th>
+                        <th class="border border-graybright px-4 py-2 text-left text-white">Duration</th>
+                        <th class="border border-graybright px-4 py-2 text-left text-white">Release Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for episode in podcast.episodes %}
+                    <tr>
+                        <td class="border border-graybright px-4 py-2 text-white">{{ episode.judul }}</td>
+                        <td class="border border-graybright px-4 py-2 text-white">{{ episode.deskripsi }}</td>
+                        <td class="border border-graybright px-4 py-2 text-white">{{ episode.durasi_episode }}</td>
+                        <td class="border border-graybright px-4 py-2 text-white">{{ episode.tanggal_episode }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endfor %}
+        <div class="flex justify-center mt-8">
+            <a href="" class="bg-blue-700 hover:bg-blue-800 text-white font-bold py-2 px-4 rounded text-lg">Back</a>
+        </div>
+    </div>
+</div>
+{% endblock content %}
