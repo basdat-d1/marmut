@@ -10,32 +10,36 @@
 <div class="bg-gradient-to-bl from-indigo-500/20 min-h-screen">
     <div class="container mx-auto p-8 mt-16">
         <div class="container mx-auto p-8 flex justify-center items-center flex-col"> 
-            <h1 class="text-4xl font-bold text-white mb-4 text-center">Playlist</h1>
+            <h1 class="text-4xl font-bold text-white mb-6 text-center">Playlist</h1>
         </div>
         {% for playlist_title, playlist_songs in playlists.items %}
         <div class="mb-8">
-            <h2 class="text-2xl font-bold text-white mb-4">{{ playlist_title }}</h2>
-            <div class="overflow-x-auto">
-                <table class="w-full border-collapse border border-graybright mt-4"> 
-                    <thead>
-                        <tr>
-                            <th class="border border-graybright px-4 py-2 text-center text-white">Song Title</th>
-                            <th class="border border-graybright px-4 py-2 text-center text-white">Artist</th>
-                            <th class="border border-graybright px-4 py-2 text-center text-white">Release Date</th>
-                            <th class="border border-graybright px-4 py-2 text-center text-white">Total Plays</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for song in playlist_songs %}
-                        <tr>
-                            <td class="border border-graybright px-4 py-2 text-white">{{ song.title_song }}</td>
-                            <td class="border border-graybright px-4 py-2 text-white">{{ song.artist }}</td>
-                            <td class="border border-graybright px-4 py-2 text-white">{{ song.release }}</td>
-                            <td class="border border-graybright px-4 py-2 text-white">{{ song.total_plays }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+            <h2 class="text-2xl font-bold text-white mb-4 text-center">{{ playlist_title }}</h2>
+            <div class="flex justify-center">
+                <div class="bg-gray/20 rounded-3xl p-8 shadow-lg w-full max-w-3xl">
+                    <div class="overflow-x-auto">
+                        <table class="w-full border-collapse border border-graybright"> 
+                            <thead>
+                                <tr>
+                                    <th class="border border-graybright px-4 py-2 text-center text-white">Song Title</th>
+                                    <th class="border border-graybright px-4 py-2 text-center text-white">Artist</th>
+                                    <th class="border border-graybright px-4 py-2 text-center text-white">Release Date</th>
+                                    <th class="border border-graybright px-4 py-2 text-center text-white">Total Plays</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for song in playlist_songs %}
+                                <tr>
+                                    <td class="border border-graybright px-4 py-2 text-white">{{ song.title_song }}</td>
+                                    <td class="border border-graybright px-4 py-2 text-white">{{ song.artist }}</td>
+                                    <td class="border border-graybright px-4 py-2 text-white">{{ song.release }}</td>
+                                    <td class="border border-graybright px-4 py-2 text-white">{{ song.total_plays }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
         {% endfor %}

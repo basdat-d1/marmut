@@ -32,4 +32,5 @@ urlpatterns = [
     # path('play-user-playlist/', include('play_user_playlist.urls')),
     # path('search-bar/', include('search_bar.urls')),
     # path('user-playlist/', include('user_playlist.urls')),
+    path('podcast/', include('podcast.urls')),
 ]
