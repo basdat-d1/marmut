@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block meta %}
+<title>Search Results</title>
+{% endblock meta %}
+
+{% block content %}
+<!-- Navbar -->
+{% include "navbar/pengguna/navbar_pengguna_biasa.html" %}
+
+<!-- Main Content -->
+<header class="bg-primary-500 py-4 mt-20">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <h1 class="text-2xl font-semibold text-white">SEARCH RESULTS</h1>
+    </div>
+</header>
+
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center">
+    <div class="mb-8 w-1/2 mx-auto">
+        <form action="" method="GET">
+            <div class="flex items-center justify-center">
+                <label for="query" class="mr-4 text-white">Query:</label>
+                <input type="text" id="query" name="query" class="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:border-blue-500 flex-grow">
+                <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-md ml-4 hover:bg-blue-600 focus:outline-none focus:ring focus:border-blue-500">CARI</button>
+            </div>
+        </form>
+    </div>
+
+    <h2 class="text-xl font-bold mb-4 text-white">Maaf, pencarian untuk “love” tidak ditemukan</h2>
+</main>
+
+<footer class="bg-gray-800 py-4">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-gray-300">
+        <p>&copy; 2024 Marmut. All rights reserved.</p>
+    </div>
+</footer>
+{% endblock content %}
