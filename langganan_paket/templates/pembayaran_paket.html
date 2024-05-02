@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block meta %}
+<title>Pembayaran Paket</title>
+{% endblock meta %}
+
+{% block content %}
+<!-- Navbar -->
+{% include "components/navbar/navbar_pengguna.html" %}
+<hr class="border-b border-gray-400 mb-4 mt-20"> <!-- Garis di akhir navbar -->
+
+<div class="container mx-auto px-4 mt-16 text-center"> <!-- Tambahkan class text-center untuk membuat teks terpusat -->
+    <h1 class="text-2xl font-bold my-4 text-white mt-8 mb-8">Pembayaran Paket</h1> <!-- Tambahkan class mt-8 untuk memberikan margin top dan mb-8 untuk memberikan margin bottom -->
+    <div class="my-4">
+        <h2 class="text-lg font-semibold text-white">Informasi Paket yang Ingin Dibeli:</h2> <!-- Ubah warna tulisan menjadi putih -->
+        <table class="border border-gray-400 my-2 mx-auto"> <!-- Tambahkan class mx-auto untuk membuat tabel terpusat -->
+            <tr>
+                <td class="border border-gray-400 px-4 py-2 text-white font-bold">Jenis</td> <!-- Ubah warna tulisan menjadi putih -->
+                <td class="border border-gray-400 px-4 py-2 text-white" id="jenis">{{ jenis }}</td> <!-- Ubah warna tulisan menjadi putih -->
+            </tr>
+            <tr>
+                <td class="border border-gray-400 px-4 py-2 text-white font-bold">Harga</td> <!-- Ubah warna tulisan menjadi putih -->
+                <td class="border border-gray-400 px-4 py-2 text-white" id="harga">{{ harga }}</td> <!-- Ubah warna tulisan menjadi putih -->
+            </tr>
+        </table>
+    </div>
+    <div class="my-4">
+        <h2 class="text-lg font-semibold text-white">Metode Pembayaran:</h2> <!-- Ubah warna tulisan menjadi putih -->
+        <!-- Menambahkan event onchange untuk menyimpan metode pembayaran yang dipilih -->
+        <select id="metode_pembayaran" class="border border-gray-400 px-4 py-2 mt-2 bg-gray-800 text-black focus:outline-none focus:border-indigo-500"> <!-- Ubah warna tulisan menjadi hitam -->
+            <option value="transfer_bank">Transfer Bank</option>
+            <option value="kartu_kredit">Kartu Kredit</option>
+            <option value="e_wallet">E-Wallet</option>
+        </select>
+    </div>
+    <a href="/langganan-paket/riwayat_transaksi" id="submit_button" class="bg-blue-500 text-white px-4 py-2 rounded mt-4">Submit</a>
+</div>
+
+<script>
+    // Mengambil nilai parameter dari URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const jenis = urlParams.get('jenis');
+    const harga = urlParams.get('harga');
+
+    // Menampilkan nilai parameter pada halaman
+    document.getElementById('jenis').innerText = jenis;
+    document.getElementById('harga').innerText = harga;
+
+    // Menambahkan event listener untuk menyimpan metode pembayaran yang dipilih
+    document.getElementById('metode_pembayaran').addEventListener('change', function() {
+        const selectedMethod = this.value;
+        const submitButton = document.getElementById('submit_button');
+        // Menambahkan metode pembayaran ke dalam parameter URL saat tombol submit ditekan
+        submitButton.href = `/langganan-paket/riwayat_transaksi?jenis=${jenis}&harga=${harga}&metode_pembayaran=${selectedMethod}`;
+    });
+</script>
+
+{% endblock content %}

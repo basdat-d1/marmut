@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block meta %}
+<title>Search Bar</title>
+{% endblock meta %}
+
+{% block content %}
+<!-- Navbar -->
+<nav class="bg-black/50 backdrop-blur-sm text-white font-poppins py-4 px-8 cursor-pointer top-0 z-50 w-full fixed border-b-[1px] border-white/20">
+    <div class="container mx-auto flex justify-between items-center">
+        <div class="flex items-center gap-5">
+            <img src="https://cdn.discordapp.com/attachments/1098280536046325872/1231037558486728704/marmut.png?ex=66245c91&is=66230b11&hm=35f53f4bd4bacb54f95dc25155ad292b490c527b96d4c7754719cd777c805459&" alt="Marmut Logo" class="h-14">
+            <div class="logo-neon flex items-center justify-center">
+                <span class="text-3xl font-bold" style="color: #FF00FF; text-shadow: 0 0 8px #FF00FF, 0 0 12px #FF00FF, 0 0 24px #FF1493;">Ma</span>
+                <span class="text-3xl font-bold" style="color: #00FFFF; text-shadow: 0 0 8px #00FFFF, 0 0 12px #00FFFF, 0 0 24px #00BFFF;">rmut</span>
+            </div>
+        </div>  
+        <div class="flex items-center gap-5">
+            <a href="/dashboard/" class="hover:bg-blue-700 px-3 py-2 rounded">Dashboard</a>
+            <a href="/lihat_chart/" class="hover:bg-blue-700 px-3 py-2 rounded">Chart</a>
+            <a href="/search_bar/" class="bg-blue-700 px-3 py-2 rounded">Search Bar</a>
+            <a href="/user_playlist/" class="hover:bg-blue-700 px-3 py-2 rounded">Playlist</a>
+            <a href="/langganan_paket/" class="hover:bg-blue-700 px-3 py-2 rounded">Langganan Paket</a>
+            <a href="/downloaded_songs/" class="hover:bg-blue-700 px-3 py-2 rounded">Downloaded Songs</a>
+        </div>
+    </div>
+</nav>
+
+<!-- Main Content -->
+<header class="bg-primary-500 py-4 mt-20">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <h1 class="text-2xl font-semibold text-white">SEARCH BAR</h1>
+    </div>
+</header>
+
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center">
+    <div class="mb-8 w-1/2 mx-auto">
+        <form action="" method="GET">
+            <div class="flex items-center justify-center">
+                <label for="query" class="mr-4 text-white">Query:</label>
+                <input type="text" id="query" name="query" class="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:border-blue-500 flex-grow">
+                <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-md ml-4">CARI</button>
+            </div>
+        </form>
+    </div>
+
+    <h2 class="text-xl font-bold mb-4 text-white">Hasil Pencarian "love"</h2>
+    <table class="w-full border-collapse border border-gray-400 mb-8 text-white mx-auto">
+        <thead>
+            <tr>
+                <th class="border border-gray-400 px-4 py-2">Tipe</th>
+                <th class="border border-gray-400 px-4 py-2">Judul</th>
+                <th class="border border-gray-400 px-4 py-2">Oleh</th>
+                <th class="border border-gray-400 px-4 py-2">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="border border-gray-400 px-4 py-2">SONG</td>
+                <td class="border border-gray-400 px-4 py-2">Love is in the air</td>
+                <td class="border border-gray-400 px-4 py-2">Artist1</td>
+                <td class="border border-gray-400 px-4 py-2">
+                    <a href="#" class="bg-blue-500 text-white px-4 py-2 rounded">Lihat</a>
+                </td>
+            </tr>
+            <tr>
+                <td class="border border-gray-400 px-4 py-2">SONG</td>
+                <td class="border border-gray-400 px-4 py-2">What is love</td>
+                <td class="border border-gray-400 px-4 py-2">Artist2</td>
+                <td class="border border-gray-400 px-4 py-2">
+                    <a href="#" class="bg-blue-500 text-white px-4 py-2 rounded">Lihat</a>
+                </td>
+            </tr>
+            <tr>
+                <td class="border border-gray-400 px-4 py-2">PODCAST</td>
+                <td class="border border-gray-400 px-4 py-2">Love is Blind Pod</td>
+                <td class="border border-gray-400 px-4 py-2">Podcaster1</td>
+                <td class="border border-gray-400 px-4 py-2">
+                    <a href="#" class="bg-blue-500 text-white px-4 py-2 rounded">Lihat</a>
+                </td>
+            </tr>
+            <tr>
+                <td class="border border-gray-400 px-4 py-2">USER PLAYLIST</td>
+                <td class="border border-gray-400 px-4 py-2">90s Love Songs</td>
+                <td class="border border-gray-400 px-4 py-2">User1</td>
+                <td class="border border-gray-400 px-4 py-2">
+                    <a href="#" class="bg-blue-500 text-white px-4 py-2 rounded">Lihat</a>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</main>
+
+<footer class="bg-gray-800 py-4">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-gray-300">
+        <p>&copy; 2024 Marmut. All rights reserved.</p>
+    </div>
+</footer>
+{% endblock content %}
