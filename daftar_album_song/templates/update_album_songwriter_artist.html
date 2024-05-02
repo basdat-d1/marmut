@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% load static %}
+
+<link rel="stylesheet" href="styles.css">
+
+{% block meta %}
+<title>Edit Album</title>
+{% endblock meta %}
+
+{% block content %}
+{% include "components/navbar/navbar_pengguna.html" %}
+<div class="bg-gradient-to-bl from-indigo-500/20 pt-32 h-screen flex flex-col justify-start items-center">
+    <div class="flex flex-col items-center justify-center">
+        <div class="text-center text-white">
+            <div class="flex justify-center items-center mb-6">
+                <i class="fa fa-music text-white text-3xl neon-effect mr-2"></i>
+                <h1 class="text-4xl font-bold">Edit Album</h1>
+            </div>
+        </div>
+    </div>
+    <div class="flex justify-center p-3 flex mx-auto sm:flex-row flex-row items-center sm:items-stretch" style="margin-bottom: 2rem;">
+        <div class=" bg-gray/20 text-white shadow-inner border-white rounded-3xl py-12 px-16">
+            <form action="/submit-album" method="POST">
+                <!-- Album Title -->
+                <div class="mt-3 text-white">
+                <label for="album-title">Album Title:</label>
+                <input class="mt-3 text-black" type="text" id="album-title" name="album-title" value = "{{judul}}" required>
+                </div>
+
+                <!-- Record Label Dropdown -->
+                <div class="mt-3 text-white">
+                <label for="record-label">Record Label:</label>
+                <select class="mt-3 text-black" id="record-label" name="record-label" value = "{{label}}" required>
+                    <option value="{{label}}">Select Record Label</option>
+                    <option class="mt-3 text-black" value="Record Label 1">Record Label 1</option>
+                    <option class="mt-3 text-black" value="Record Label 2">Record Label 2</option>
+                    <option class="mt-3 text-black" value="Record Label 3">Record Label 3</option>
+                    <!-- Add more options as needed -->
+                </select>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="flex justify-center p-3 flex mx-auto sm:flex-row flex-row items-center sm:items-stretch">
+                    <button class="mt-3 px-4 py-2 border-2 border-blue text-blue rounded-xl py-2 px-4 hover:bg-blue hover:text-black duration-200">
+                        <input type="submit" value="Edit">
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    @keyframes pulse-animation {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+    .animate-pulse {
+        animation: pulse-animation 2s infinite ease-in-out;
+    }
+    .neon-text {
+        text-shadow: 0 0 2px #fff, 0 0 4px #fff, 0 0 6px #0fa, 0 0 8px #0fa, 0 0 10px #0fa;
+    }
+    .plus-button {
+        bottom: 2rem; /* Adjust as needed */
+        transform: translateX(-50%);
+        padding: 0.5rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-decoration: none;
+        transition: background-color 0.3s ease;
+    }
+</style>
+{% endblock %}
