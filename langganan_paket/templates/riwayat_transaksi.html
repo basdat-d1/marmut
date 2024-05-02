@@ -7,32 +7,36 @@
 
 {% block content %}
 <!-- Navbar -->
-{% include "components/navbar/navbar_pengguna.html" %}
+{% include "navbar/pengguna/navbar_pengguna_biasa.html" %}
 <hr class="border-b border-gray-400 mb-4 mt-20"> <!-- Garis di akhir navbar -->
 
-<div class="container mx-auto px-4 mt-16"> <!-- Tambahkan margin top yang lebih besar di sini -->
-    <h1 class="text-2xl font-bold my-4 text-white text-center">Riwayat Transaksi Paket</h1>
-    <table class="w-full border-collapse border border-gray-400">
-        <thead>
-            <tr>
-                <th class="border border-gray-400 px-4 py-2 text-white text-center">Jenis</th>
-                <th class="border border-gray-400 px-4 py-2 text-white text-center">Tanggal Dimulai</th>
-                <th class="border border-gray-400 px-4 py-2 text-white text-center">Tanggal Berakhir</th>
-                <th class="border border-gray-400 px-4 py-2 text-white text-center">Metode Pembayaran</th>
-                <th class="border border-gray-400 px-4 py-2 text-white text-center">Nominal</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td class="border border-gray-400 px-4 py-2 text-white text-center font-bold" id="jenis"></td>
-                <td class="border border-gray-400 px-4 py-2 text-white text-center" id="tanggal_dimulai"></td>
-                <td class="border border-gray-400 px-4 py-2 text-white text-center" id="tanggal_berakhir"></td>
-                <td class="border border-gray-400 px-4 py-2 text-white text-center" id="metode_pembayaran"></td>
-                <td class="border border-gray-400 px-4 py-2 text-white text-center" id="nominal"></td>
-            </tr>
-        </tbody>
-    </table>
-    <a href="#" class="bg-blue-500 text-white px-4 py-2 rounded mt-4 block mx-auto w-24 text-center">Kembali</a>
+<div class="container mx-auto px-4 mt-16"> <!-- Container untuk konten -->
+    <h1 class="text-3xl font-bold my-4 text-white text-center">Riwayat Transaksi Paket</h1> <!-- Judul halaman -->
+    <div class="overflow-x-auto"> <!-- Membuat konten bisa di-scroll horizontal -->
+        <table class="w-full table-auto border-collapse border border-gray-400 bg-white shadow-md rounded-lg"> <!-- Tabel dengan shadow dan border-radius -->
+            <thead class="bg-blue-500 text-white"> <!-- Warna latar belakang header -->
+                <tr>
+                    <th class="px-4 py-2 text-center text-black">Jenis</th> <!-- Teks hitam -->
+                    <th class="px-4 py-2 text-center text-black">Tanggal Dimulai</th>
+                    <th class="px-4 py-2 text-center text-black">Tanggal Berakhir</th>
+                    <th class="px-4 py-2 text-center text-black">Metode Pembayaran</th>
+                    <th class="px-4 py-2 text-center text-black">Nominal</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="border px-4 py-2 text-center font-semibold" id="jenis"></td> <!-- Teks center dan padding -->
+                    <td class="border px-4 py-2 text-center" id="tanggal_dimulai"></td>
+                    <td class="border px-4 py-2 text-center" id="tanggal_berakhir"></td>
+                    <td class="border px-4 py-2 text-center" id="metode_pembayaran"></td>
+                    <td class="border px-4 py-2 text-center" id="nominal"></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="text-center mt-4"> <!-- Membuat tombol kembali menjadi tengah -->
+        <a href="#" class="bg-blue-500 text-white px-6 py-3 rounded inline-block" style="background-color: #3B82F6;">Kembali</a> <!-- Tombol kembali dengan padding dan warna -->
+    </div>
 </div>
 
 <script>
