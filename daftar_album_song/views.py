@@ -7,7 +7,7 @@ def list_album(request):
         "judul": "judul 1",
         "label": "label 1",
         "jumlah_lagu": "10",
-        "total_durasi": "3 hours",
+        "total_durasi": "300",
     }
 
     return render(request, 'list_album_songwriter_artist.html', dummy_album)
@@ -57,7 +57,7 @@ def list_album_label(request):
         "judul": "judul 1",
         "label": "label 1",
         "jumlah_lagu": "10",
-        "total_durasi": "3 hours",
+        "total_durasi": "300",
     }
 
     return render(request, 'list_album_label.html', dummy_album)

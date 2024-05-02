@@ -1,7 +1,8 @@
+{% load static %}
 <nav>
     <div class="flex justify-between bg-black/50 backdrop-blur-sm text-white font-poppins items-center py-4 px-8 cursor-pointer top-0 z-50 w-full fixed border-b-[1px] border-white/20">
         <div class="flex gap-5 font-semibold text-bluebright text-xl">
-            <img src="assets/images/marmut" alt="Marmut Logo" class="h-14">
+            <img src="{% static 'images/marmut.png' %}" alt="Marmut Logo" class="h-14">
             <div class="logo-neon flex items-center justify-center">
                 <span class="text-3xl font-bold" style="color: #FF00FF; text-shadow: 0 0 8px #FF00FF, 0 0 12px #FF00FF, 0 0 24px #FF1493;">Ma</span>
                 <span class="text-3xl font-bold" style="color: #00FFFF; text-shadow: 0 0 8px #00FFFF, 0 0 12px #00FFFF, 0 0 24px #00BFFF;">rmut</span>
