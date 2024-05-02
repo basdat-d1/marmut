@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block meta %}
+<title>Playlist Detail</title>
+{% endblock meta %}
+
+{% block content %}
+{% include "navbar/pengguna/navbar_pengguna_biasa.html" %}
+<div class="bg-gradient-to-bl from-indigo-500/20 pt-20 h-screen">
+    <div class="flex justify-center items-center h-full">
+        <div class="text-center">
+            <div class="flex justify-center">
+                <div class="flex flex-row justify-center items-start w-full max-w-6xl px-10">
+                    <div class="bg-gray/20 rounded-3xl shadow-inner p-6 md:p-12 w-full" style="min-width: 150%;">
+                        <h2 class="text-3xl font-bold mb-2 text-white font-serif text-left">Song Detail</h2>
+                        <div class="bg-gray-800 rounded-lg p-4 md:p-8">
+                            <div class="grid gap-2 text-white text-sm md:text-base text-left">
+                                <h3 class="font-semibold mb-1 font-serif">Judul: Walk campaign company agent day</h3>
+                                <h3 class="font-semibold mb-1 font-serif">Genre(s):</h3>
+                                <h3 class="font-semibold mb-1 font-serif px-3 md:px-6">- Pop/h3>
+                                <h3 class="font-semibold mb-1 font-serif px-3 md:px-6">- Hip Hop</h3>
+                                <h3 class="font-semibold mb-1 font-serif">Artist: John Brooks</h3>
+                                <h3 class="font-semibold mb-1 font-serif">Songwriter(s):</h3>
+                                <h3 class="font-semibold mb-1 font-serif px-3 md:px-6">- John Brooks</h3>
+                                <h3 class="font-semibold mb-1 font-serif px-3 md:px-6">- Paul Scott</h3>
+                                <h3 class="font-semibold mb-1 font-serif">Durasi: 3 menit</h3>
+                                <h3 class="font-semibold mb-1 font-serif">Tanggal Rilis: 18 Maret</h3>
+                                <h3 class="font-semibold mb-1 font-serif">Tahun: 2024</h3>
+                                <h3 class="font-semibold mb-1 font-serif">Total Play: 253021</h3>
+                                <h3 class="font-semibold mb-1 font-serif">Total Downloads: 32532</h3>
+                                <h3 class="font-semibold mb-1 font-serif">Album: Horizontal demand-driven website</h3>
+                            </div>
+                        </div>
+                        
+                        <div class="-mx-2 mt-2">
+                            <div class="mb-1">
+                                <label for="progressSlider" class="block text-white"></label>
+                                <input type="range" id="progressSlider" name="progressSlider" min="0" max="100" value="0" class="w-full" onchange="updateSliderValue(this.value)">
+                                <span id="sliderValue" class="block text-center text-white text-sm md:text-lg">0%</span>
+                            </div>
+                            <div class="flex flex-col space-y-2">
+                                <button class="border-2 border-bluebright text-bluebright rounded-xl py-2 px-6 hover:bg-bluebright hover:text-black duration-200 text-sm md:text-lg">Add to Playlist</button>
+                                <button class="border-2 border-bluebright text-bluebright rounded-xl py-2 px-6 hover:bg-bluebright hover:text-black duration-200 text-sm md:text-lg">Download</button>
+                                <button class="border-2 border-bluebright text-bluebright rounded-xl py-2 px-6 hover:bg-bluebright hover:text-black duration-200 text-sm md:text-lg">Kembali</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function updateSliderValue(value) {
+        document.getElementById('sliderValue').innerText = value + '%';
+    }
+</script>
+{% endblock content %}
