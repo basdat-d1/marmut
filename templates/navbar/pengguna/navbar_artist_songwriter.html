@@ -1,0 +1,33 @@
+{% load static %}
+<nav>
+    <div class="flex justify-between bg-black/50 backdrop-blur-sm text-white font-poppins items-center py-4 px-8 cursor-pointer top-0 z-50 w-full fixed border-b-[1px] border-white/20">
+        <div class="flex gap-5 font-semibold text-bluebright text-xl">
+            <img src="{% static 'images/marmut.png' %}" alt="Marmut Logo" class="h-14">
+            <div class="logo-neon flex items-center justify-center">
+                <span class="text-3xl font-bold" style="color: #FF00FF; text-shadow: 0 0 8px #FF00FF, 0 0 12px #FF00FF, 0 0 24px #FF1493;">Ma</span>
+                <span class="text-3xl font-bold" style="color: #00FFFF; text-shadow: 0 0 8px #00FFFF, 0 0 12px #00FFFF, 0 0 24px #00BFFF;">rmut</span>
+            </div>
+        </div>
+        <div class="flex gap-5 items-center">
+            <a href="/dashboard" class="hover:bg-blue-700 px-3 py-2 rounded">Dashboard</a>
+            <a href="/lihat_chart" class="hover:bg-blue-700 px-3 py-2 rounded">Chart</a>
+            <a href="/user_playlist" class="hover:bg-blue-700 px-3 py-2 rounded">Playlist</a>
+            <a href="/album_song" class="hover:bg-blue-700 px-3 py-2 rounded">Album & Songs</a>
+            <a href="/cek_royalti" class="hover:bg-blue-700 px-3 py-2 rounded">Royalti</a>
+            <a href="/langganan_paket" class="hover:bg-blue-700 px-3 py-2 rounded">Subscription</a>
+            <a href="/">
+                <button class="border-2 border-blue text-blue rounded-xl py-2 px-4 hover:bg-blue hover:text-black duration-200">Logout</button>
+            </a>
+            <form onsubmit="search(); return false;" class="flex items-center">
+                <input type="text" placeholder="Search..." id="searchInput" class="px-3 py-2 rounded text-black border-2 border-blue" style="background-color: white; outline: none; transition: all 0.3s ease;">
+            </form>
+        </div>
+    </div>
+</nav>
+
+<script>
+    function search() {
+        const searchTerm = document.getElementById('searchInput').value;
+        window.location.href = `/search?query=${encodeURIComponent(searchTerm)}`;
+    }
+</script>

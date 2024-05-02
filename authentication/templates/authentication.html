@@ -6,11 +6,11 @@
 {% endblock meta %}
 
 {% block content %}
-{% include "components/navbar/navbar_guest.html" %}
+{% include "navbar/navbar_guest.html" %}
 <div class="bg-gradient-to-bl from-indigo-500/20 pt-72 h-screen">
     <div class="flex flex-col items-center justify-center">
         <div class="text-center text-white">
-            <img src="https://cdn.discordapp.com/attachments/1098280536046325872/1231037558486728704/marmut.png?ex=66245c91&is=66230b11&hm=35f53f4bd4bacb54f95dc25155ad292b490c527b96d4c7754719cd777c805459&" alt="Marmut Logo" class="mb-4 mx-auto">
+            <img src="{% static 'images/marmut.png' %}" alt="Marmut Logo" class="mb-4 mx-auto">
             <div class="flex justify-center items-center mb-6">
                 <i class="fa fa-music text-white text-3xl neon-effect mr-2"></i>
                 <h1 class="text-4xl font-bold">Marmut-D1</h1>
