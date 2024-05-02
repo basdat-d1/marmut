@@ -30,6 +30,12 @@ urlpatterns = [
     # path('play-podcast/', include('play_podcast.urls')),
     path('play-song/', include('play_song.urls')),
     path('play-user-playlist/', include('play_user_playlist.urls')),
+    path('lihat-chart/', include('lihat_chart.urls')),
+    path('play-podcast/', include('play_podcast.urls')),
+    # path('play-song/', include('play_song.urls')),
+    # path('play-user-playlist/', include('play_user_playlist.urls')),
     # path('search-bar/', include('search_bar.urls')),
+    # path('user-playlist/', include('user_playlist.urls')),
+    path('podcast/', include('podcast.urls')),
     path('user-playlist/', include('user_playlist.urls')),
 ]
