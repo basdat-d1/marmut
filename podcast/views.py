@@ -24,11 +24,6 @@ def daftar_podcast(request):
                 "title": "Sidecast",
                 "durasi": "420 jam",
                 "episodes": 9
-            },
-            {
-                "title": "Full Send Podcast",
-                "durasi": "23 jam",
-                "episodes": 19
             }
         ]
     }
@@ -69,7 +64,7 @@ def daftar_episode(request):
             'title': 'Episode 2',
             'description': 'Guest Interview',
             'release': "01/22/2022",
-            'duration': '1.5 jam',
+            'duration': '1 jam 30 menit',
         },
         {
             'title': 'Episode 3',
@@ -89,7 +84,7 @@ def daftar_episode(request):
                 'title': 'Episode 2',
                 'description': 'Celebrity Guest Interview',
                 'release': "03/12/2023",
-                'duration': '1.5 jam',
+                'duration': '1 jam',
             },
             {
                 'title': 'Episode 3',
@@ -115,28 +110,8 @@ def daftar_episode(request):
             'title': 'Sidecast #3',
             'description': 'Deep Dive Discussion',
             'release': "07/24/2022",
-            'duration': '1.5 jam',
+            'duration': '1 jam',
         },
-        ],
-        "Full Send Podcast": [
-            {
-                'title': 'Full Send #1', 
-                'description': 'Opening Episode',
-                'release': "09/05/2023",
-                'duration': '30 menit',
-            },
-            {
-                'title': 'Full Send #2',
-                'description': 'Wild Adventures Recap',
-                'release': "09/12/2023",
-                'duration': '45 menit',
-            },
-            {
-                'title': 'Full Send #3',
-                'description': 'Crazy Stunts Challenge',
-                'release': "09/19/2023",
-                'duration': '1 jam',
-            },
         ],
     }
     
