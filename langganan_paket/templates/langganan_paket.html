@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block meta %}
+<title>Pilih Paket Langganan</title>
+{% endblock meta %}
+
+{% block content %}
+{% include "navbar/pengguna/navbar_pengguna_biasa.html" %} <!-- Masukkan navbar di sini -->
+
+<section id="authentication" class="h-screen w-full xl:px-20 lg:px-10 sm:px-2 px-4 flex items-center justify-center">
+    <div class="w-full max-w-screen-md bg-gradient-to-b from-purple-600 to-purple-400 rounded-lg shadow-xl overflow-hidden">
+        <h1 class="text-3xl font-semibold my-4 text-white text-center">Pilih Paket Langganan</h1>
+
+        <!-- Tombol Riwayat Transaksi -->
+        <div class="flex justify-end mr-6 mb-4">
+            <a href="/riwayat-transaksi" class="border-2 border-blue text-blue rounded-xl py-2 px-4 hover:bg-blue hover:text-black duration-200">Riwayat Transaksi</a>
+        </div>
+
+        <!-- Daftar Paket Langganan -->
+        <div class="bg-white bg-opacity-90 rounded-lg shadow-lg p-6">
+            <table class="w-full border-collapse border border-gray-400">
+                <thead class="bg-gray-200">
+                    <tr>
+                        <th class="px-6 py-3 text-center text-xs font-semibold uppercase text-gray-600">Jenis</th>
+                        <th class="px-6 py-3 text-center text-xs font-semibold uppercase text-gray-600">Harga</th>
+                        <th class="px-6 py-3 text-center text-xs font-semibold uppercase text-gray-600">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="border border-gray-400 px-4 py-2 text-center">1 Bulan</td>
+                        <td class="border border-gray-400 px-4 py-2 text-center">Rp54.900</td>
+                        <td class="border border-gray-400 px-4 py-2 text-center">
+                            <a href="/langganan-paket/pembayaran_paket/?jenis=1_bulan&harga=54900" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded" style="background-color: #3b82f6;">Berlangganan</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="border border-gray-400 px-4 py-2 text-center">3 Bulan</td>
+                        <td class="border border-gray-400 px-4 py-2 text-center">Rp150.000</td>
+                        <td class="border border-gray-400 px-4 py-2 text-center">
+                            <a href="/langganan-paket/pembayaran_paket/?jenis=3_bulan&harga=150000" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded" style="background-color: #3b82f6;">Berlangganan</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="border border-gray-400 px-4 py-2 text-center">6 Bulan</td>
+                        <td class="border border-gray-400 px-4 py-2 text-center">Rp290.000</td>
+                        <td class="border border-gray-400 px-4 py-2 text-center">
+                            <a href="/langganan-paket/pembayaran_paket/?jenis=6_bulan&harga=290000" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded" style="background-color: #3b82f6;">Berlangganan</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="border border-gray-400 px-4 py-2 text-center">1 Tahun</td>
+                        <td class="border border-gray-400 px-4 py-2 text-center">Rp500.000</td>
+                        <td class="border border-gray-400 px-4 py-2 text-center">
+                            <a href="/langganan-paket/pembayaran_paket/?jenis=1_tahun&harga=500000" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded" style="background-color: #3b82f6;">Berlangganan</a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+{% endblock content %}

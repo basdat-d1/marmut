@@ -6,24 +6,41 @@
 {% endblock meta %}
 
 {% block content %}
-{% include "components/navbar/navbar_pengguna.html" %}
+{% include "navbar/label/navbar_label.html" %}
 <div class="bg-gradient-to-bl from-indigo-500/20 pt-28 h-screen">
-    <div class="flex gap-10 justify-center">
-        <h1 class="flex justify-center shadow-2xl text-4xl text-white mb-10">Dashboard Label</h1>
+    <div class="flex justify-center">
+        <h1 class="text-4xl text-white mb-10">Dashboard Label</h1>
     </div>
-    <div class="flex gap-10 justify-center">
-        <div class="grid grid-cols-2 gap-y-6 gap-x-24 bg-gray/20 text-white shadow-inner border-white rounded-3xl py-12 px-16">
-            <div>
-                <p class="text-sm opacity-50">Nama</p>
-                <p>{{ nama }}</p>
+    <div class="flex justify-start">
+        <div class="flex flex-row justify-between items-start w-full max-w-6xl px-10">
+            <div class="bg-gray/20 text-white shadow-inner border-white rounded-3xl py-12 px-16 flex-1 mr-5" style="min-width: 60%;">
+                <div style="margin-bottom: 20px;">
+                    <p class="text-sm opacity-50">Nama</p>
+                    <p>{{ nama }}</p>
+                </div>
+                <div style="margin-bottom: 20px;">
+                    <p class="text-sm opacity-50">Email</p>
+                    <p>{{ email }}</p>
+                </div>
+                <div style="margin-bottom: 20px;">
+                    <p class="text-sm opacity-50">Kontak</p>
+                    <p>{{ kontak }}</p>
+                </div>
             </div>
-            <div>
-                <p class="text-sm opacity-50">Email</p>
-                <p>{{ email }}</p>
-            </div>
-            <div>
-                <p class="text-sm opacity-50">Kontak</p>
-                <p>{{ kontak }}</p>
+            <div class="grid grid-cols-4 gap-y-6 gap-x-24 bg-gray/20 text-white shadow-inner border-white rounded-3xl py-12 px-16 items-center mx-10 " style="min-width: 106%;">
+                <div class="col-span-4">
+                    <h2 class="text-3xl text-bluebright font-bold mb-4">Your Album</h2>
+                </div>
+                <p class="text-2xl text-bluebright font-bold">Judul</p>
+                <p class="text-2xl text-bluebright font-bold">Jumlah Lagu</p>
+                <p class="text-2xl text-bluebright font-bold">Total Durasi</p>
+                <p class="text-bluebright font-bold"></p>
+                {% for album in albums %}
+                    <p>{{ album.judul }}</p>
+                    <p>{{ album.jumlah_lagu }}</p>
+                    <p>{{ album.total_durasi }} menit</p>
+                    <button class="border-2 border-blue text-bluebright rounded-xl py-2 px-6 hover:bg-blue hover:text-black duration-200" style="white-space: nowrap;"><a href="/list-album/1/songs">Lihat Daftar Lagu</a></button>
+                {% endfor %}
             </div>
         </div>
     </div>
