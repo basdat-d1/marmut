@@ -5,5 +5,5 @@ app_name = 'lihat_chart'
 
 urlpatterns = [
     path('', show_chart, name='show_chart'),
-    path('lihat-playlist/', show_playlist, name='show_playlist'),
+    path('isi-chart/', isi_chart, name='isi_chart'),
 ]

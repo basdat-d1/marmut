@@ -22,7 +22,7 @@ def show_chart(request):
 
     return render(request, 'lihat_chart.html', content)
 
-def show_playlist(request):
+def isi_chart(request):
     playlist_type = request.GET.get('playlist_type')
     playlists = {
         "Daily Top 20": [
@@ -157,6 +157,6 @@ def show_playlist(request):
 
     if playlist_type in playlists:
         selected_playlist = {playlist_type: playlists[playlist_type]}
-        return render(request, 'lihat_playlist.html', {'playlists': selected_playlist})
+        return render(request, 'isi_chart.html', {'playlists': selected_playlist})
     else:
         return HttpResponseNotFound('Playlist not found.')
