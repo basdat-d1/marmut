@@ -51,3 +51,23 @@ def update_song(request):
     }
 
     return render(request, 'update_song_songwriter_artist.html', dummy_song)
+
+def list_album_label(request):
+    dummy_album = {
+        "judul": "judul 1",
+        "label": "label 1",
+        "jumlah_lagu": "10",
+        "total_durasi": "3 hours",
+    }
+
+    return render(request, 'list_album_label.html', dummy_album)
+
+def list_song_label(request):
+    dummy_song = {
+        "judul": "judul 1",
+        "total_play": "0",
+        "total_download": "10",
+        "total_durasi": "300",
+    }
+
+    return render(request, 'list_song_label.html', dummy_song)
