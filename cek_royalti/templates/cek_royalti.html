@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% load static %}
+
+<link rel="stylesheet" href="styles.css">
+
+{% block meta %}
+<title>List Album / Song</title>
+{% endblock meta %}
+
+{% block content %}
+{% include "components/navbar/navbar_pengguna.html" %}
+<div class="bg-gradient-to-bl from-indigo-500/20 pt-32 h-screen flex flex-col justify-start items-center">
+    <div class="flex flex-col items-center justify-center">
+        <div class="text-center text-white">
+            <div class="flex justify-center items-center mb-6">
+                <i class="fa fa-music text-white text-3xl neon-effect mr-2"></i>
+                <h1 class="text-4xl font-bold">Your Royalties</h1>
+            </div>
+            <div class="flex justify-center items-center mb-8">
+                <p class="text-2xl font-bold neon-text animate-pulse">Your ultimate music and podcast experience starts here.</p>
+            </div>
+        </div>
+    </div>
+    <table>
+        <thead>
+            <tr >
+                <th>Judul Lagu</th>
+                <th>Judul Album</th>
+                <th>Total Play</th>
+                <th>Total Download</th>
+                <th>Total Royalti</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Song 1</td>
+                <td>Album 1</td>
+                <td>1000</td>
+                <td>500</td>
+                <td>Rp2000000</td>
+            </tr>
+            <tr>
+                <td>Song 2</td>
+                <td>Album 2</td>
+                <td>800</td>
+                <td>400</td>
+                <td>Rp1500000</td>
+            </tr>
+            <tr>
+                <td>Song 3</td>
+                <td>Album 1</td>
+                <td>1200</td>
+                <td>600</td>
+                <td>Rp2500000</td>
+            </tr>
+            <!-- Add more rows with dummy data as needed -->
+        </tbody>
+    </table>
+</div>
+
+<style>
+    @keyframes pulse-animation {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+    .animate-pulse {
+        animation: pulse-animation 2s infinite ease-in-out;
+    }
+    .neon-text {
+        text-shadow: 0 0 2px #fff, 0 0 4px #fff, 0 0 6px #0fa, 0 0 8px #0fa, 0 0 10px #0fa;
+    }
+    .plus-button {
+        bottom: 2rem; /* Adjust as needed */
+        transform: translateX(-50%);
+        padding: 0.5rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-decoration: none;
+        transition: background-color 0.3s ease;
+    }
+    table {
+        border-collapse: collapse;
+        width: 50%;
+        color: white; /* Set text color to white */
+    }
+    th, td {
+        border: 1px solid white; /* Set border color to white */
+        padding: 8px;
+        text-align: center
+    }
+    </style>
+</style>
+{% endblock %}
