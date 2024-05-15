@@ -1,8 +1,22 @@
 from django.shortcuts import render
+from utils import query
 
 # Create your views here.
 
 def list_album(request):
+    # try:
+    #     # user = request.COOKIES['email']
+    # except:
+    #     return HttpResponseRedirect(reverse("authentication:login_user"))
+    user = 'robert74@gmail.com'
+    query_data =(rf"""SELECT MARMUT.KONTEN.judul, MARMUT.SONG.total_play, MARMUT.SONG.total_download
+                    FROM MARMUT.KONTEN, MARMUT.SONG
+                    JOIN MARMUT.ARTIST ON MARMUT.SONG.id_artist = MARMUT.ARTIST.id
+                    WHERE MARMUT.ARTIST.email_akun = '{user}' AND MARMUT.KONTEN.id = MARMUT.SONG.id_konten;
+                 """)
+    data = query.run_query(query_data, None)
+
+
     dummy_album = {
         "judul": "judul 1",
         "label": "label 1",

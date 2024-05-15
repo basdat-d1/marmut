@@ -23,7 +23,7 @@ def run_query(query, params=None):
             connection.commit()
     except Exception as e:
         connection.rollback()
-        return str(e)
+        print(e)
     finally:
         cursor.close()
         connection.close()

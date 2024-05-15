@@ -18,6 +18,7 @@
             </div>
         </div>
     </div>
+    {% for album in albums %}
     <div style="margin-bottom: 2rem;">
         <main class="p-3 sm:p-5 flex gap-8 w-full md:w-4/5 lg:w-3/5 mx-auto sm:flex-row flex-row items-center sm:items-stretch">
             <img src="{% static 'images/marmut.png' %}" alt="{{ judul }}" class="text-white w-full max-w-[300px] aspect-[4/5] object-cover rounded-lg shadow-lg" />
@@ -41,6 +42,7 @@
             </section>
         </main>
     </div>
+    {% endfor %}
     <div >
         <a href="/daftar-album-song/create-album/1" class="plus-button items-center sm:items-stretch">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-white sm:items-stretch items-center" viewBox="0 0 20 20" fill="currentColor">

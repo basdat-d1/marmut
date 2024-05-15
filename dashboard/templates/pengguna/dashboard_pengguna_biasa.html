@@ -53,9 +53,9 @@
                 <p class="text-2xl text-bluebright font-bold">Jumlah Lagu</p>
                 <p class="text-2xl text-bluebright font-bold">Total Durasi</p>
                 {% for playlist in playlists %}
-                    <p>{{ playlist.judul }}</p>
-                    <p>{{ playlist.jumlah_lagu }}</p>
-                    <p>{{ playlist.total_durasi }} menit</p>
+                    <p>{{ playlist.0 }}</p>
+                    <p>{{ playlist.1 }}</p>
+                    <p>{{ playlist.2 }} menit</p>
                 {% endfor %}
             </div>
         </div>
