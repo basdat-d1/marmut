@@ -1,29 +1,36 @@
-import psycopg2
-from django.conf import settings
+from django.db import connection
 
-def get_db_connection():
-    return psycopg2.connect(
-        dbname=settings.DATABASES['default']['NAME'],
-        user=settings.DATABASES['default']['USER'],
-        password=settings.DATABASES['default']['PASSWORD'],
-        host=settings.DATABASES['default']['HOST'],
-        port=settings.DATABASES['default']['PORT']
-    )
+def connectdb(func):
+    def wrapper(request):
+        with connection.cursor() as cursor:
+            cursor.execute("SET search_path to MARMUT;")
+            return func(cursor, request)
+        
+    return wrapper
 
-def run_query(query, params=None):
-    connection = get_db_connection()
-    cursor = connection.cursor()
+# def get_db_connection():
+#     return psycopg2.connect(
+#         dbname=settings.DATABASES['default']['NAME'],
+#         user=settings.DATABASES['default']['USER'],
+#         password=settings.DATABASES['default']['PASSWORD'],
+#         host=settings.DATABASES['default']['HOST'],
+#         port=settings.DATABASES['default']['PORT']
+#     )
 
-    try:
-        cursor.execute(query, params)
+# def run_query(query, params=None):
+#     connection = get_db_connection()
+#     cursor = connection.cursor()
 
-        if query.upper().startswith('SELECT'):
-            return cursor.fetchall()
-        else:
-            connection.commit()
-    except Exception as e:
-        connection.rollback()
-        return str(e)
-    finally:
-        cursor.close()
-        connection.close()
+#     try:
+#         cursor.execute(query, params)
+
+#         if query.upper().startswith('SELECT'):
+#             return cursor.fetchall()
+#         else:
+#             connection.commit()
+#     except Exception as e:
+#         connection.rollback()
+#         return str(e)
+#     finally:
+#         cursor.close()
+#         connection.close()
