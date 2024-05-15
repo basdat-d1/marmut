@@ -172,8 +172,15 @@ def login(cursor: CursorWrapper, request):
 
       request.session["email"] = email
       request.session['is_logged_in'] = True
-      response = HttpResponseRedirect(reverse('dashboard:dashboard_podcaster'))
+      response = HttpResponseRedirect(reverse('dashboard:dashboard_pengguna'))
       response.set_cookie('last_login', str(datetime.datetime.now()))
+      response.set_cookie('email', user_pengguna[0][0])
+      response.set_cookie('name', user_pengguna[0][1])
+      response.set_cookie('kota_asal', user_pengguna[0][7])
+      response.set_cookie('gender', user_pengguna[0][3])
+      response.set_cookie('tempat_lahir', user_pengguna[0][4])
+      response.set_cookie('tanggal_lahir', user_pengguna[0][5])
+      # response.set_cookie('role', user_pengguna[0][0])
       return response
       
   return render(request, 'login.html', context)

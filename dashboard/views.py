@@ -1,7 +1,78 @@
 from django.http import HttpResponseRedirect
-from django.shortcuts import render
 from django.urls import reverse
 from utils import query
+from utils.query import connectdb
+from django.shortcuts import redirect, render
+from django.contrib import messages
+from django.db import connection
+from django.db.backends.utils import CursorWrapper
+
+@connectdb
+def dashboard_pengguna(cursor: CursorWrapper, request):
+    print(request)
+    print(request.COOKIES['email'])
+    try:
+        user = request.COOKIES['email']
+    except:
+        return HttpResponseRedirect(reverse("authentication:login"))
+    
+    playlists = ""
+    podcasts = ""
+    albums = ""
+    songs = ""
+    
+    with connection.cursor() as cursor:
+        if ("Podcaster" in request.COOKIES['roles']):
+            query =(rf"""SELECT k.judul AS podcast_title, COUNT(e.id_episode) AS episode_count, COALESCE(SUM(e.durasi), 0) AS total_duration_minutes
+                    FROM podcast AS p
+                    JOIN konten AS k ON p.id_konten = k.id
+                    LEFT JOIN episode AS e ON p.id_konten = e.id_konten_podcast
+                    WHERE p.email_podcaster = '{user}'
+                    GROUP BY k.judul;
+                 """)
+            cursor.execute(query)
+            podcasts = cursor.fetchall()
+        elif ("Artist" in request.COOKIES['roles']):
+            query =(rf"""SELECT KONTEN.judul, SONG.total_play, SONG.total_download
+                    FROM KONTEN, SONG
+                    JOIN ARTIST ON SONG.id_artist = ARTIST.id
+                    WHERE ARTIST.email_akun = '{user}' AND KONTEN.id = SONG.id_konten;
+                 """)
+            cursor.execute(query)
+            songs = cursor.fetchall()
+        elif ("Songwriter" in request.COOKIES['roles']):
+            query =(rf"""SELECT konten.judul AS song_title, song.total_play, song.total_download
+                    FROM royalti
+                    JOIN song ON royalti.id_song = song.id_konten
+                    JOIN konten ON song.id_konten = konten.id
+                    JOIN songwriter ON royalti.id_pemilik_hak_cipta = songwriter.id_pemilik_hak_cipta
+                    WHERE songwriter.email_akun = '{user}';
+                 """)
+            cursor.execute(query)
+            songs = cursor.fetchall()
+
+        query =(rf"""SELECT judul, jumlah_lagu, total_durasi
+                    FROM MARMUT.user_playlist
+                    WHERE email_pembuat = '{user}';
+                 """)
+        cursor.execute(query)
+        playlists = cursor.fetchall()
+        
+    pengguna_biasa = {
+        "nama": request.COOKIES['nama'],
+        "email": request.COOKIES['email'],
+        "kota_asal": request.COOKIES['kota_asal'],
+        "gender": request.COOKIES['gender'],
+        "tempat_lahir": request.COOKIES['tempat_lahir'],
+        "tanggal_lahir": request.COOKIES['tanggal_lahir'],
+        "role": request.COOKIES['roles'],
+        "playlists": playlists,
+        "podcasts": podcasts,
+        "albums": albums,
+        "songs": songs
+    }
+    return render(request, 'pengguna/dashboard_pengguna.html', pengguna_biasa)
+    
 
 def dashboard_pengguna_biasa(request):
     # try:
