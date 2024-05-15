@@ -34,7 +34,7 @@ ALLOWED_HOSTS = ["*"]
 # Application definition
 
 INSTALLED_APPS = [
-    'album_song',
+    # 'album_song',
     'authentication',
     'cek_royalti',
     'daftar_album_song',
