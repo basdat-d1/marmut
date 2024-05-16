@@ -1,4 +1,3 @@
-# auth/views.py
 import uuid
 import random
 import datetime
