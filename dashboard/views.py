@@ -8,7 +8,7 @@ from django.db.backends.utils import CursorWrapper
 def dashboard_pengguna(cursor: CursorWrapper, request):
     print("masuk dashboard_pengguna")
     try:
-        user = request.session.get('email')
+        email = request.session.get('email')
     except:
         return HttpResponseRedirect(reverse("authentication:login"))
     
@@ -17,15 +17,15 @@ def dashboard_pengguna(cursor: CursorWrapper, request):
     albums = ""
     songs = ""
 
-    cursor.execute("SELECT * FROM AKUN WHERE email = %s", [user])
-    user_info = cursor.fetchone()
+    cursor.execute("SELECT * FROM AKUN WHERE email = %s", [email])
+    pengguna = cursor.fetchone()
     
     if (request.session.get('is_podcaster')):
         query =(rf"""SELECT k.judul AS podcast_title, COUNT(e.id_episode) AS episode_count, COALESCE(SUM(e.durasi), 0) AS total_duration_minutes
                 FROM podcast AS p
                 JOIN konten AS k ON p.id_konten = k.id
                 LEFT JOIN episode AS e ON p.id_konten = e.id_konten_podcast
-                WHERE p.email_podcaster = '{user}'
+                WHERE p.email_podcaster = '{email}'
                 GROUP BY k.judul;
                 """)
         cursor.execute(query)
@@ -34,7 +34,7 @@ def dashboard_pengguna(cursor: CursorWrapper, request):
         query =(rf"""SELECT KONTEN.judul, SONG.total_play, SONG.total_download
                 FROM KONTEN, SONG
                 JOIN ARTIST ON SONG.id_artist = ARTIST.id
-                WHERE ARTIST.email_akun = '{user}' AND KONTEN.id = SONG.id_konten;
+                WHERE ARTIST.email_akun = '{email}' AND KONTEN.id = SONG.id_konten;
                 """)
         cursor.execute(query)
         songs = cursor.fetchall()
@@ -44,14 +44,14 @@ def dashboard_pengguna(cursor: CursorWrapper, request):
                 JOIN song ON royalti.id_song = song.id_konten
                 JOIN konten ON song.id_konten = konten.id
                 JOIN songwriter ON royalti.id_pemilik_hak_cipta = songwriter.id_pemilik_hak_cipta
-                WHERE songwriter.email_akun = '{user}';
+                WHERE songwriter.email_akun = '{email}';
                 """)
         cursor.execute(query)
         songs = cursor.fetchall()
 
     query =(rf"""SELECT judul, jumlah_lagu, total_durasi
                 FROM user_playlist
-                WHERE email_pembuat = '{user}';
+                WHERE email_pembuat = '{email}';
                 """)
     cursor.execute(query)
     playlists = cursor.fetchall()
@@ -67,7 +67,7 @@ def dashboard_pengguna(cursor: CursorWrapper, request):
 
     records_song_artist, records_song_songwriter, records_podcast = [], [], []
 
-    records_user_playlist = fetch_user_playlist(cursor, user)
+    records_user_playlist = fetch_user_playlist(cursor, email)
 
     role_verified_list = []
     if is_artist:
@@ -81,13 +81,13 @@ def dashboard_pengguna(cursor: CursorWrapper, request):
 
     gender = 'Perempuan' if request.session.get('gender') == 0 else 'Laki-laki'
         
-    pengguna_biasa = {
-        "nama": user_info[2],
-        "email": user,
-        "kota_asal": user_info[7],
+    context = {
+        "nama": pengguna[2],
+        "email": email,
+        "kota_asal": pengguna[7],
         "gender": gender,
-        'tempat_lahir': user_info[4],
-        'tanggal_lahir': user_info[5],
+        'tempat_lahir': pengguna[4],
+        'tanggal_lahir': pengguna[5],
         "role": request.session.get('roles'),
         "playlists": playlists,
         "podcasts": podcasts,
@@ -106,7 +106,7 @@ def dashboard_pengguna(cursor: CursorWrapper, request):
         'records_podcast': records_podcast,
 
     }
-    return render(request, 'dashboard_pengguna.html', pengguna_biasa)
+    return render(request, 'dashboard_pengguna.html', context)
 
 @connectdb
 def dashboard_label(cursor: CursorWrapper, request):
@@ -199,59 +199,3 @@ def fetch_user_playlist(cursor: CursorWrapper, email):
 def is_premium(cursor: CursorWrapper, email):
     cursor.execute("SELECT * FROM PREMIUM WHERE email = %s", [email])
     return bool(cursor.fetchone())
-#     return render(request, 'dashboard.html', context)
-
-
-# def get_role_pengguna(email: str) -> list:
-#     roles = []
-#     with conn.cursor() as cursor:
-#         cursor.execute("set search_path to marmut")
-#         cursor.execute(f"SELECT * FROM ARTIST WHERE email_akun = '{email}'")
-#         artist = cursor.fetchall()
-#         cursor.execute(f"SELECT * FROM SONGWRITER WHERE email_akun = '{email}'")
-#         songwriter = cursor.fetchall()
-#         cursor.execute(f"SELECT * FROM PODCASTER WHERE email = '{email}'")
-#         podcaster = cursor.fetchall()
-#         cursor.execute("set search_path to public")
-#     if len(artist) > 0:
-#         roles.append("Artist")
-#     if len(songwriter) > 0:
-#         roles.append("Songwriter")
-#     if len(podcaster) > 0:
-#         roles.append("Podcaster")
-
-#     return roles
-
-# def get_songs_artist_songwriter(email: str) -> list:
-#     songs = []
-#     formatted_songs = []
-#     with conn.cursor() as cursor:
-#         cursor.execute("set search_path to marmut")
-#         cursor.execute(f"SELECT id FROM ARTIST WHERE email_akun = '{email}'")
-#         id_json = cursor.fetchall()
-#         id_searched = str(id_json[0][0])
-
-#         cursor.execute(f"SELECT * FROM SONG WHERE id_artist = '{id_searched}'")
-#         datas = cursor.fetchall()
-
-#         for data in datas:
-#             id_konten = str(data[0])
-#             cursor.execute(f"SELECT * FROM KONTEN WHERE id = '{id_konten}'")
-#             tmp = cursor.fetchall()
-#             songs.append(tmp)
-
-#         for song_group in songs:
-#             group_list = []
-#             for song in song_group:
-#                 song_dict = {
-#                     'id': song[0],
-#                     'title': song[1],
-#                     'release_date': song[2],
-#                     'year': song[3],
-#                     'duration': song[4]
-#                 }
-#                 group_list.append(song_dict)
-#             formatted_songs.append(group_list)
-#         cursor.execute("set search_path to public")
-
-#     return formatted_songs
