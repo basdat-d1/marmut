@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block meta %}
-<title>Dashboard Pengguna Biasa</title>
+<title>Dashboard Pengguna</title>
 {% endblock meta %}
 
 {% block content %}
@@ -41,7 +41,7 @@
                     </div>
                     <div>
                         <p class="text-sm opacity-50">Role</p>
-                        <p>{{ role }}</p>
+                        <p>{{ role_verified }}</p>
                     </div>
                 </div>
             </div>
@@ -52,10 +52,39 @@
                 <p class="text-2xl text-bluebright font-bold">Judul</p>
                 <p class="text-2xl text-bluebright font-bold">Jumlah Lagu</p>
                 <p class="text-2xl text-bluebright font-bold">Total Durasi</p>
-                {% for playlist in playlists %}
+                {% for playlist in records_user_playlist %}
                     <p>{{ playlist.judul }}</p>
                     <p>{{ playlist.jumlah_lagu }}</p>
                     <p>{{ playlist.total_durasi }} menit</p>
+                {% endfor %}
+                <div class="col-span-3">
+                    <h2 class="text-3xl text-bluebright font-bold mb-4 mt-10">Your Songs (Artist)</h2>
+                </div>
+                <p class="text-2xl text-bluebright font-bold">Judul</p>
+                <p class="text-2xl text-bluebright font-bold">Durasi</p>
+                {% for song in records_song_artist %}
+                    <p>{{ song.2 }}</p>
+                    <p>{{ song.3 }} menit</p>
+                {% endfor %}
+                <div class="col-span-3">
+                    <h2 class="text-3xl text-bluebright font-bold mb-4 mt-10">Your Songs (Songwriter)</h2>
+                </div>
+                <p class="text-2xl text-bluebright font-bold">Judul</p>
+                <p class="text-2xl text-bluebright font-bold">Durasi</p>
+                {% for song in records_song_songwriter %}
+                    <p>{{ song.2 }}</p>
+                    <p>{{ song.3 }} menit</p>
+                {% endfor %}
+                <div class="col-span-3">
+                    <h2 class="text-3xl text-bluebright font-bold mb-4 mt-10">Your Podcasts</h2>
+                </div>
+                <p class="text-2xl text-bluebright font-bold">Judul</p>
+                <p class="text-2xl text-bluebright font-bold">Jumlah Episode</p>
+                <p class="text-2xl text-bluebright font-bold">Total Durasi</p>
+                {% for podcast in records_podcast %}
+                    <p>{{ podcast.1 }}</p>
+                    <p>{{ podcast.2 }}</p>
+                    <p>{{ podcast.3 }} menit</p>
                 {% endfor %}
             </div>
         </div>
