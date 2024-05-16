@@ -214,8 +214,6 @@ def handle_pengguna_login(cursor: CursorWrapper, request, user):
 def handle_label_login(cursor: CursorWrapper, request, label):
     email = label[2]
     id_label = label[0]
-    cursor.execute("SELECT * FROM ALBUM WHERE id_label = %s", [str(id_label)])
-    albums = cursor.fetchall()
 
     request.session["email"] = email
     request.session["role"] = 'label'
