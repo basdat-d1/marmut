@@ -487,3 +487,4 @@ def logout(request):
 #     response.delete_cookie('last_login')
 
 #     return response
+    # return HttpResponseRedirect(reverse('authentication:authentication'))
