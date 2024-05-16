@@ -40,10 +40,10 @@ def dashboard_pengguna(cursor: CursorWrapper, request):
         songs = cursor.fetchall()
     if (request.session.get('is_songwriter')):
         query =(rf"""SELECT konten.judul AS song_title, song.total_play, song.total_download
-                FROM royalti
-                JOIN song ON royalti.id_song = song.id_konten
+                FROM songwriter_write_song
+                JOIN song ON songwriter_write_song.id_song = song.id_konten
                 JOIN konten ON song.id_konten = konten.id
-                JOIN songwriter ON royalti.id_pemilik_hak_cipta = songwriter.id_pemilik_hak_cipta
+                JOIN songwriter ON songwriter_write_song.id_songwriter = songwriter.id
                 WHERE songwriter.email_akun = '{email}';
                 """)
         cursor.execute(query)

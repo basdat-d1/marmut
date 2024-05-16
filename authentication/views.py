@@ -72,14 +72,14 @@ def register_pengguna(cursor: CursorWrapper, request):
                 id_artist = str(uuid.uuid4())
                 cursor.execute('SELECT id FROM PEMILIK_HAK_CIPTA')
                 ids = cursor.fetchall()
-                id_pemilik_hak_cipta = str(random.choice(ids)[0])
+                id_pemilik_hak_cipta = str(uuid.uuid4())
                 cursor.execute("INSERT INTO ARTIST(id, email_akun, id_pemilik_hak_cipta) VALUES (%s, %s, %s)",
                                 (id_artist, email, id_pemilik_hak_cipta))
             elif role == "Songwriter":
                 id_songwriter = str(uuid.uuid4())
                 cursor.execute('SELECT id FROM PEMILIK_HAK_CIPTA')
                 ids = cursor.fetchall()
-                id_pemilik_hak_cipta = str(random.choice(ids)[0])
+                id_pemilik_hak_cipta = str(uuid.uuid4())
                 cursor.execute("INSERT INTO SONGWRITER(id, email_akun, id_pemilik_hak_cipta) VALUES (%s, %s, %s)",
                                 (id_songwriter, email, id_pemilik_hak_cipta))
         
