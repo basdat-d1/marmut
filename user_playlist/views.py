@@ -1,114 +1,202 @@
-from django.shortcuts import render
+import uuid
+from django.urls import reverse
+from utils.query import connectdb
+from django.shortcuts import render, redirect
+from django.http import HttpResponseRedirect
+from django.db.backends.utils import CursorWrapper
 
-def user_playlist(request):
-    playlists = [
-        {
-            'judul': 'Radio ground everyone',
-            'jumlah_lagu': 39,
-            'total_durasi': 6664
-        },
-        {
-            'judul': 'Health say easy',
-            'jumlah_lagu': 91,
-            'total_durasi': 4188
-        },
-        {
-            'judul': 'Rich people',
-            'jumlah_lagu': 49,
-            'total_durasi': 6682
-        },
-    ]
+@connectdb
+def user_playlist(cursor: CursorWrapper, request):
+    email_pembuat = request.session.get('email')
 
-    context = {
-        "playlists": playlists
-    }
+    if request.method == 'POST':
+        judul = request.POST['judul_playlist']
+        deskripsi = request.POST['deskripsi_playlist']
+        id_user_playlist = uuid.uuid4()
+        id_playlist = uuid.uuid4()
+        date_created = 'NOW()'
 
-    return render(request, 'user_playlist.html', context)
-
-def tambah_playlist(request):
-    return render(request, 'tambah_playlist.html')
-
-def ubah_playlist(request):
-    return render(request, 'ubah_playlist.html')
-
-def detail_playlist(request):
-    songs = [
-        {
-            'judul': 'Travel against my city',
-            'email_pembuat': 'smithkristina@hotmail.com',
-            'durasi': 3
-        },
-        {
-            'judul': 'Their thought discover',
-            'email_pembuat': 'hilalfauzan9@gmail.com',
-            'durasi': 4
-        },
-    ]
-
-    context = {
-        "songs": songs
-    }
-
-    return render(request, 'detail_playlist.html', context)
-
-def tambah_lagu(request):
-    songs_artists = [
-        ("Pretty mother reduce table", "Lauren Harrison"),
-        ("Available long suggest least", "John Brooks"),
-        ("For young sound concern", "Paul Scott"),
-        ("Travel against my city", "Tanya Ford"),
-        ("Trial PM", "Cristian Jackson"),
-        ("Country lay shake sort", "Cynthia Jordan"),
-        ("Cause yourself", "Kimberly Rodriguez"),
-        ("Cost might five air", "Kaitlyn Curry"),
-        ("Radio front number", "Cristian Jackson"),
-        ("Open population", "Lauren Harrison"),
-        ("Over trade four", "Adam Howell"),
-        ("Raise right institution", "Kimberly Rodriguez"),
-        ("Oil water organization service", "Paul Scott"),
-        ("Activity report consumer business", "Kaitlyn Curry"),
-        ("Ball or task early would", "Paul Scott"),
-        ("Mouth under local", "Cristian Jackson"),
-        ("Decision how pattern money forget", "Jessica Meyer"),
-        ("History film east though until", "Kaitlyn Curry"),
-        ("College offer expert", "Kimberly Rodriguez"),
-        ("Others own serious affect", "Cristian Jackson"),
-        ("Near source cup member", "Jessica Meyer"),
-        ("Foot north", "Kaitlyn Curry"),
-        ("Various Republican process method", "Cristian Jackson"),
-        ("Race we TV difference", "Cynthia Jordan"),
-        ("Reduce raise garden", "Cristian Jackson"),
-        ("Walk campaign company agent day", "John Brooks"),
-        ("Many speech feel wish", "Cristian Jackson"),
-        ("Bring performance sound why", "Jessica Meyer"),
-        ("Enough campaign drive", "John Brooks"),
-        ("Prepare choice address none", "Tanya Ford"),
-        ("Board majority attorney", "John Brooks"),
-        ("Site general indicate this", "Cristian Jackson"),
-        ("Less teach everyone war training", "Paul Scott"),
-        ("Me magazine organization result", "Lauren Harrison"),
-        ("Kind thing will head", "Adam Howell"),
-        ("Keep according short beat", "Cristian Jackson"),
-        ("Guess conference detail", "Jessica Meyer"),
-        ("Positive she", "Cristian Jackson"),
-        ("Remain good suddenly party", "Kimberly Rodriguez"),
-        ("Discover but million nice up", "Tanya Ford"),
-        ("Tonight dream these another", "Cristian Jackson"),
-        ("Begin could western customer", "Paul Scott"),
-        ("Single know that you", "Adam Howell"),
-        ("Simple stand still lay", "Cristian Jackson"),
-        ("Table half level actually", "Paul Scott"),
-        ("Your quickly result military board", "Paul Scott"),
-        ("Financial many evidence lawyer", "Kaitlyn Curry"),
-        ("Generation her eat quite share", "Tanya Ford"),
-        ("Trade tax", "Tanya Ford"),
-        ("Game hard agent", "Adam Howell")
-    ]
-
-    all_songs = [{'id': str(i+1), 'title': title, 'artist': artist} for i, (title, artist) in enumerate(songs_artists)]
+        cursor.execute(
+                    """INSERT INTO playlist (id) VALUES (%s)
+                    """, [id_playlist]
+        )
+        
+        cursor.execute(
+                    """INSERT INTO user_playlist (
+                        email_pembuat, 
+                        id_user_playlist, 
+                        judul, 
+                        deskripsi, 
+                        jumlah_lagu, 
+                        tanggal_dibuat, 
+                        id_playlist, 
+                        total_durasi
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                    """, [email_pembuat, id_user_playlist, judul, deskripsi, 0, date_created, id_playlist, 0]
+        )
+        
+        return redirect('/kelolaplaylist/')
+        
+    cursor.execute(
+                """SELECT judul, jumlah_lagu, total_durasi, id_user_playlist
+                    FROM user_playlist
+                    WHERE email_pembuat = %s;
+                """, [email_pembuat])
     
-    context = {
-        'all_songs': all_songs
+    result = cursor.fetchall()
+    playlists = []
+    
+    for row in result:
+        playlists.append({
+            'id': row[3],
+            'judul': row[0],
+            'jumlah_lagu': row[1],
+            'total_durasi': row[2]
+        })
+
+    return render(request, 'user_playlist.html', {'playlists': playlists})
+
+@connectdb
+def ubah_playlist(cursor: CursorWrapper, request, id_playlist):
+    if request.method == 'POST':
+        judul = request.POST['judul_playlist']
+        deskripsi = request.POST['deskripsi_playlist']
+
+        cursor.execute(
+                    """UPDATE user_playlist
+                        SET judul = %s, deskripsi = %s
+                        WHERE id_user_playlist = %s;
+                    """, [judul, deskripsi, id_playlist])
+        
+        return redirect('/kelolaplaylist/')
+    
+    judul_playlist = ''
+    deskripsi_playlist = ''
+
+    cursor.execute(
+                """SELECT judul, deskripsi
+                    FROM user_playlist
+                    WHERE id_user_playlist = %s;
+                """, [id_playlist])
+    result = cursor.fetchall()
+
+    judul_playlist, deskripsi_playlist = result[0]
+
+    return render(request, 'ubah_playlist.html', {
+        'id': id_playlist,
+        'judul': judul_playlist,
+        'deskripsi': deskripsi_playlist
+    })
+
+@connectdb
+def hapus_playlist(cursor: CursorWrapper, id_playlist):
+    cursor.execute("""
+                    DELETE FROM user_playlist
+                    WHERE id_user_playlist = %s;
+                    """, [id_playlist])
+    
+    return HttpResponseRedirect(reverse("user_playlist:user_playlist"))
+
+@connectdb
+def detail_playlist(cursor: CursorWrapper, request, id_playlist):
+    cursor.execute("""
+                    SELECT judul, email_pembuat, jumlah_lagu, total_durasi, tanggal_dibuat, deskripsi
+                    FROM user_playlist
+                    WHERE id_user_playlist = %s;
+                    """, [id_playlist])
+    result = cursor.fetchone()
+    playlist = {
+        'judul': result[0],
+        'pembuat': result[1],
+        'jumlah_lagu': result[2],
+        'total_durasi': result[3],
+        'tanggal_dibuat': result[4],
+        'deskripsi': result[5]
     }
 
-    return render(request, 'tambah_lagu.html', context)
+    cursor.execute("""
+                    SELECT song.id_konten, song.judul, artist.nama, song.durasi
+                    FROM playlist_song
+                    JOIN song ON playlist_song.id_song = song.id_konten
+                    JOIN artist ON song.id_artist = artist.id
+                    WHERE playlist_song.id_playlist = %s;
+                    """, [id_playlist])
+    songs = cursor.fetchall()
+
+    daftar_lagu = []
+    for song in songs:
+        daftar_lagu.append({
+            'id': song[0],
+            'judul': song[1],
+            'artis': song[2],
+            'durasi': song[3]
+        })
+
+    return render(request, 'detail_playlist.html', {
+        'playlist': playlist,
+        'daftar_lagu': daftar_lagu
+    })
+
+@connectdb
+def tambah_lagu(cursor: CursorWrapper, request, id_playlist):
+    if request.method == 'POST':
+        id_lagu = request.POST['id_lagu']
+
+        cursor.execute("""
+                        SELECT COUNT(*)
+                        FROM playlist_song
+                        WHERE id_playlist = %s AND id_song = %s;
+                        """, [id_playlist, id_lagu])
+        exists = cursor.fetchone()[0]
+        
+        if exists == 0:
+            cursor.execute("""
+                           INSERT INTO playlist_song (id_playlist, id_song)
+                           VALUES (%s, %s);
+                           """, [id_playlist, id_lagu])
+
+            cursor.execute("""
+                           UPDATE user_playlist
+                           SET jumlah_lagu = jumlah_lagu + 1, total_durasi = total_durasi + (
+                               SELECT durasi FROM song WHERE id_konten = %s
+                           )
+                           WHERE id_user_playlist = %s;
+                           """, [id_lagu, id_playlist])
+
+            return redirect(f'/detailplaylist/{id_playlist}/')
+
+    cursor.execute("""
+                    SELECT id_konten, judul, artist.nama
+                    FROM song
+                    JOIN artist ON song.id_artist = artist.id;
+                    """)
+    songs = cursor.fetchall()
+
+    daftar_lagu = []
+    for song in songs:
+        daftar_lagu.append({
+            'id': song[0],
+            'judul': f"{song[1]} - {song[2]}"
+        })
+
+    return render(request, 'tambah_lagu.html', {
+        'id_playlist': id_playlist,
+        'daftar_lagu': daftar_lagu
+    })
+
+@connectdb
+def hapus_lagu(cursor: CursorWrapper, id_playlist, id_lagu):
+    cursor.execute("""
+                    DELETE FROM playlist_song
+                    WHERE id_playlist = %s AND id_song = %s;
+                    """, [id_playlist, id_lagu])
+
+    cursor.execute("""
+                   UPDATE user_playlist
+                   SET jumlah_lagu = jumlah_lagu - 1, total_durasi = total_durasi - (
+                       SELECT durasi FROM song WHERE id_konten = %s
+                   )
+                   WHERE id_user_playlist = %s;
+                   """, [id_lagu, id_playlist])
+
+    return redirect(f'/detailplaylist/{id_playlist}/')

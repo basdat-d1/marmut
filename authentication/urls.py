@@ -1,4 +1,6 @@
 from django.urls import path
+
+from dashboard.views import dashboard_pengguna
 from .views import (authentication, register, login,
                     register_pengguna, register_label)
 

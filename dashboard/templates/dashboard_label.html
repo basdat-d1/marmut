@@ -6,7 +6,7 @@
 {% endblock meta %}
 
 {% block content %}
-{% include "navbar/label/navbar_label.html" %}
+{% include "navbar/navbar_label.html" %}
 <div class="bg-gradient-to-bl from-indigo-500/20 pt-28 h-screen">
     <div class="flex justify-center">
         <h1 class="text-4xl text-white mb-10">Dashboard Label</h1>
@@ -27,7 +27,10 @@
                     <p>{{ kontak }}</p>
                 </div>
             </div>
-            <div class="grid grid-cols-4 gap-y-6 gap-x-24 bg-gray/20 text-white shadow-inner border-white rounded-3xl py-12 px-16 items-center mx-10 " style="min-width: 106%;">
+            {% if not albums %}
+                <h2 class="text-3xl text-bluebright font-bold mb-4">Belum Memiliki Album</h2>
+            {% else %}
+            <div class="grid grid-cols-4 gap-y-6 gap-x-24 bg-gray/20 text-white shadow-inner border-white rounded-3xl py-12 px-16 items-center mx-10" style="min-width: 106%;">
                 <div class="col-span-4">
                     <h2 class="text-3xl text-bluebright font-bold mb-4">Your Album</h2>
                 </div>
@@ -36,11 +39,12 @@
                 <p class="text-2xl text-bluebright font-bold">Total Durasi</p>
                 <p class="text-bluebright font-bold"></p>
                 {% for album in albums %}
-                    <p>{{ album.judul }}</p>
-                    <p>{{ album.jumlah_lagu }}</p>
-                    <p>{{ album.total_durasi }} menit</p>
+                    <p>{{ album.0 }}</p>
+                    <p>{{ album.1 }}</p>
+                    <p>{{ album.2 }} menit</p>
                     <button class="border-2 border-blue text-bluebright rounded-xl py-2 px-6 hover:bg-blue hover:text-black duration-200" style="white-space: nowrap;"><a href="/list-album/1/songs">Lihat Daftar Lagu</a></button>
                 {% endfor %}
+            {% endif %}
             </div>
         </div>
     </div>
