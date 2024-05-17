@@ -6,7 +6,7 @@
 {% endblock meta %}
 
 {% block content %}
-{% include "navbar/pengguna/navbar_pengguna_biasa.html" %}
+{% include "navbar/navbar_pengguna.html" %}
 <div class="bg-gradient-to-bl from-indigo-500/20 min-h-screen">
     <div class="container mx-auto p-8 mt-16">
         <div class="container mx-auto p-8 flex justify-center items-center flex-col"> 
@@ -15,16 +15,15 @@
 
         {% for podcast in podcasts %}
         <div class="flex justify-center">
-            <div class="bg-gray/20 rounded-3xl p-8 shadow-lg w-full max-w-3xl">
+            <div class="bg-gray/20 rounded-3xl p-8 shadow-lg w-full max-w-3xl mb-14">
                 <h2 class="text-2xl font-bold text-white mb-4">{{ podcast.title }}</h2>
                 <div class="grid grid-cols-2 gap-6">
                     <div>
-                        <p class="text-lg text-white"><span class="font-bold">Genre:</span> {{ podcast.genre }}</p>
+                        <p class="text-lg text-white"><span class="font-bold">Genre:</span> {{ podcast.genres }}</p>
                         <p class="text-lg text-white"><span class="font-bold">Podcaster:</span> {{ podcast.podcaster }}</p>
                     </div>
                     <div>
-                        <p class="text-lg text-white"><span class="font-bold">Duration:</span> {{ podcast.durasi }}</p>
-                        <p class="text-lg text-white"><span class="font-bold">Release Date:</span> {{ podcast.tanggal }}</p>
+                        <p class="text-lg text-white"><span class="font-bold">Duration:</span> {{ podcast.total_duration }}</p>
                     </div>
                 </div>
 
@@ -51,8 +50,8 @@
             </div>
         </div>
         {% endfor %}
-        <div class="flex justify-center mt-8">
-            <button onclick="window.history.back()" class="border-2 border-blue text-blue rounded-xl py-2 px-4 hover:bg-blue hover:text-white duration-200 text-lg">Back</button>
+        <div class="flex justify-center mt-4 mb-8">
+            <button onclick="window.history.back()" class="border-2 border-blue text-blue rounded-xl py-2 px-4 hover:bg-blue hover:text-white duration-200 text-xl">Back</button>
         </div>
     </div>
 </div>
