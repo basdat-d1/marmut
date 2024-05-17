@@ -8,7 +8,7 @@
 {% endblock meta %}
 
 {% block content %}
-{% include "navbar/pengguna/navbar_artist_songwriter.html" %}
+{% include "navbar/navbar_pengguna.html" %}
 <div class="bg-gradient-to-bl from-indigo-500/20 pt-32 h-screen flex flex-col justify-start items-center">
     <div class="flex flex-col items-center justify-center">
         <div class="text-center text-white">
@@ -29,28 +29,15 @@
             </tr>
         </thead>
         <tbody>
+            {% for royalti in royalties %}
             <tr>
-                <td>Song 1</td>
-                <td>Album 1</td>
-                <td>1000</td>
-                <td>500</td>
-                <td>Rp2000000</td>
+                <td>{{royalti.0}}</td>
+                <td>{{royalti.1}}</td>
+                <td>{{royalti.2}}</td>
+                <td>{{royalti.3}}</td>
+                <td>{{royalti.4}}</td>
             </tr>
-            <tr>
-                <td>Song 2</td>
-                <td>Album 2</td>
-                <td>800</td>
-                <td>400</td>
-                <td>Rp1500000</td>
-            </tr>
-            <tr>
-                <td>Song 3</td>
-                <td>Album 1</td>
-                <td>1200</td>
-                <td>600</td>
-                <td>Rp2500000</td>
-            </tr>
-            <!-- Add more rows with dummy data as needed -->
+            {% endfor %}
         </tbody>
     </table>
 </div>

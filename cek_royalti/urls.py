@@ -4,5 +4,5 @@ from .views import (cek_royalti)
 app_name = 'cek-royalti'
 
 urlpatterns = [
-    path('cek/1', cek_royalti, name='cek/1'),
+    path('', cek_royalti, name='cek_royalti'),
 ]
