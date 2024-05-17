@@ -152,10 +152,10 @@ def login(cursor: CursorWrapper, request):
         email = request.POST.get('email')
         password = request.POST.get('password')
 
-        cursor.execute("SELECT * FROM AKUN WHERE email = %s", [email])
+        cursor.execute("SELECT * FROM AKUN WHERE email = %s AND password = %s", [email, password])
         user = cursor.fetchone()
 
-        cursor.execute("SELECT * FROM LABEL WHERE email = %s", [email])
+        cursor.execute("SELECT * FROM LABEL WHERE email = %s AND password = %s", [email, password])
         label = cursor.fetchone()
 
         # Kalo email atau password salah
@@ -290,4 +290,5 @@ def is_premium(cursor: CursorWrapper, email):
 @csrf_exempt
 def logout(request):
     request.session.flush()
+    request.session.clear_expired()
     return HttpResponseRedirect(reverse('authentication:authentication'))
