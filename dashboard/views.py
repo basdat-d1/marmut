@@ -6,7 +6,6 @@ from django.db.backends.utils import CursorWrapper
 
 @connectdb
 def dashboard_pengguna(cursor: CursorWrapper, request):
-    print("masuk dashboard_pengguna")
     try:
         email = request.session.get('email')
     except:
