@@ -7,7 +7,7 @@
 
 {% block content %}
 <!-- Navbar -->
-{% include "navbar/pengguna/navbar_pengguna_biasa.html" %}
+{% include "navbar/navbar_pengguna.html" %}
 <hr class="border-b border-gray-400 mb-4 mt-20"> <!-- Garis di akhir navbar -->
 
 <div class="container mx-auto px-4 mt-16"> <!-- Container untuk konten -->
@@ -24,34 +24,21 @@
                 </tr>
             </thead>
             <tbody>
+                {% for transaksi in riwayat_transaksi %}
                 <tr>
-                    <td class="border px-4 py-2 text-center font-semibold" id="jenis"></td> <!-- Teks center dan padding -->
-                    <td class="border px-4 py-2 text-center" id="tanggal_dimulai"></td>
-                    <td class="border px-4 py-2 text-center" id="tanggal_berakhir"></td>
-                    <td class="border px-4 py-2 text-center" id="metode_pembayaran"></td>
-                    <td class="border px-4 py-2 text-center" id="nominal"></td>
+                    <td class="border px-4 py-2 text-center font-semibold">{{ transaksi.jenis }}</td> <!-- Teks center dan padding -->
+                    <td class="border px-4 py-2 text-center">{{ transaksi.tanggal_dimulai }}</td>
+                    <td class="border px-4 py-2 text-center">{{ transaksi.tanggal_berakhir }}</td>
+                    <td class="border px-4 py-2 text-center">{{ transaksi.metode_pembayaran }}</td>
+                    <td class="border px-4 py-2 text-center">{{ transaksi.nominal }}</td>
                 </tr>
+                {% endfor %}
             </tbody>
         </table>
     </div>
     <div class="text-center mt-4"> <!-- Membuat tombol kembali menjadi tengah -->
-        <a href="#" class="bg-blue-500 text-white px-6 py-3 rounded inline-block" style="background-color: #3B82F6;">Kembali</a> <!-- Tombol kembali dengan padding dan warna -->
+        <a href="{% url 'langganan_paket' %}" class="bg-blue-500 text-white px-6 py-3 rounded inline-block" style="background-color: #3B82F6;">Kembali</a> <!-- Tombol kembali dengan padding dan warna -->
     </div>
 </div>
-
-<script>
-    // Mengambil nilai parameter dari URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const jenis = urlParams.get('jenis');
-    const harga = urlParams.get('harga');
-    const metode_pembayaran = urlParams.get('metode_pembayaran');
-
-    // Menampilkan nilai parameter pada halaman
-    document.getElementById('jenis').innerText = jenis;
-    document.getElementById('tanggal_dimulai').innerText = new Date().toLocaleString('en-US', { month: 'long', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric', hour12: true });
-    document.getElementById('tanggal_berakhir').innerText = new Date(new Date().getTime() + 30 * 24 * 60 * 60 * 1000).toLocaleString('en-US', { month: 'long', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric', hour12: true });
-    document.getElementById('metode_pembayaran').innerText = metode_pembayaran;
-    document.getElementById('nominal').innerText = `Rp${harga}`;
-</script>
 
 {% endblock content %}

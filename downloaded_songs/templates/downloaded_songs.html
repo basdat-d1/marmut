@@ -7,7 +7,7 @@
 
 {% block content %}
 <!-- Navbar -->
-{% include "navbar/pengguna/navbar_premium.html" %}
+{% include "navbar/navbar_pengguna.html" %} <!-- Masukkan navbar di sini -->
 
 <!-- Content -->
 <hr class="border-b border-gray-400 mb-4 mt-20"> <!-- Garis di akhir navbar -->
@@ -27,26 +27,8 @@
                         <th class="px-6 py-3 text-left text-xs font-semibold uppercase text-gray-600">Actions</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-300">
-                    <tr>
-                        <td class="px-6 py-4 whitespace-nowrap">Song1</td>
-                        <td class="px-6 py-4 whitespace-nowrap">Artist1</td>
-                        <td class="px-6 py-4 whitespace-nowrap">20/02/2024</td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <button onclick="lihat('Song1')" style="background-color: #3b82f6;" class="hover:bg-blue-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Lihat</button>
-                            <button onclick="hapus('Song1')" style="background-color: #ef4444;" class="hover:bg-red-600 text-white font-bold py-2 px-4 ml-2 rounded focus:outline-none focus:shadow-outline">Hapus</button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="px-6 py-4 whitespace-nowrap">Song2</td>
-                        <td class="px-6 py-4 whitespace-nowrap">Artist2</td>
-                        <td class="px-6 py-4 whitespace-nowrap">21/03/2024</td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <button onclick="lihat('Song2')" style="background-color: #3b82f6;" class="hover:bg-blue-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Lihat</button>
-                            <button onclick="hapus('Song2')" style="background-color: #ef4444;" class="hover:bg-red-600 text-white font-bold py-2 px-4 ml-2 rounded focus:outline-none focus:shadow-outline">Hapus</button>
-                        </td>
-                    </tr>
-                    <!-- Add more rows for additional dummy data -->
+                <tbody class="divide-y divide-gray-300" id="downloadedSongsBody">
+                    <!-- Data lagu diunduh akan ditampilkan di sini -->
                 </tbody>
             </table>
         </div>
@@ -83,6 +65,32 @@
     function kembali() {
         window.location.href = document.referrer;
     }
+
+    // Fetch data lagu yang diunduh saat halaman dimuat
+    document.addEventListener("DOMContentLoaded", function(event) { 
+        fetch('/downloaded_songs/api/get_downloaded_songs/')
+        .then(response => response.json())
+        .then(data => {
+            const downloadedSongsBody = document.getElementById('downloadedSongsBody');
+            if (data.downloaded_songs) {
+                data.downloaded_songs.forEach(song => {
+                    const row = `
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap">${song[0]}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">${song[1]}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">${song[2]}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <button onclick="lihat('${song[0]}')" style="background-color: #3b82f6;" class="hover:bg-blue-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Lihat</button>
+                                <button onclick="hapus('${song[0]}')" style="background-color: #ef4444;" class="hover:bg-red-600 text-white font-bold py-2 px-4 ml-2 rounded focus:outline-none focus:shadow-outline">Hapus</button>
+                            </td>
+                        </tr>
+                    `;
+                    downloadedSongsBody.insertAdjacentHTML('beforeend', row);
+                });
+            }
+        })
+        .catch(error => console.error('Error fetching downloaded songs:', error));
+    });
 </script>
 
 {% endblock content %}
