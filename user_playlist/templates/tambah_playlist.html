@@ -6,14 +6,15 @@
 {% endblock meta %}
 
 {% block content %}
-{% include "navbar/pengguna/navbar_pengguna_biasa.html" %}
+{% include "navbar/navbar_pengguna.html" %}
 <div class="bg-gradient-to-bl from-indigo-500/20 pt-28 h-screen">
     <div class="flex justify-center items-center h-full">
         <div class="text-center">
             <h1 class="text-4xl text-white mb-10">Tambah Playlist</h1>
             <div class="flex justify-center">
                 <div class="bg-gray/20 rounded-3xl shadow-inner p-10" style="width: 40rem;">
-                    <form class="space-y-4">
+                    <form class="space-y-4" method="post" action="{% url 'user_playlist:tambah_playlist' %}">
+                        {% csrf_token %}
                         <div class="flex flex-col mb-4">
                             <label for="judul" class="text-xl text-white mb-4 text-left">Judul</label>
                             <input type="text" id="judul" name="judul" class="bg-white w-full rounded-lg px-4 py-3 focus:outline-none text-lg" placeholder="Masukkan judul playlist" required>

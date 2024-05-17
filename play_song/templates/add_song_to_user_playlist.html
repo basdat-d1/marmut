@@ -12,22 +12,23 @@
         <div class="bg-gray/20 rounded-3xl shadow-inner p-10" style="max-width: 100%;">
             <h2 class="text-3xl text-white font-bold mb-10">Add Song to User Playlist</h2>
             <div class="mb-10">
-                <p class="text-white">Judul: Various Republican process method</p>
-                <p class="text-white mb-10">Artist: Cristian Jackson</p>
-                <label for="playlistDropdown" class="flex text-white mt-10">Playlist:</label>
-                <select id="playlistDropdown" name="playlist_id" class="p-2 rounded-lg w-full text-sm mt-4 mb-10">
-                    <option value="playlist1">Radio ground everyone</option>
-                    <option value="playlist2">Argue get</option>
-                    <option value="playlist3">Health say easy</option>
-                    <option value="playlist4">Rich People</option>
-                    <option value="playlist5">Once respond voice</option>
-                </select>
-                <button class="border-2 border-bluebright text-bluebright rounded-xl py-2 px-6 hover:bg-bluebright hover:text-black duration-200 mt-6 mr-6">
-                    Kembali
-                </button>
-                <button class="border-2 border-bluebright text-bluebright rounded-xl py-2 px-6 hover:bg-bluebright hover:text-black duration-200">
-                    Tambah
-                </button>
+                <p class="text-white">Judul: {{ song_title }}</p>
+                <p class="text-white mb-10">Artist: {{ artist }}</p>
+                <form method="POST">
+                    {% csrf_token %}
+                    <label for="playlistDropdown" class="flex text-white mt-10">Playlist:</label>
+                    <select id="playlistDropdown" name="id_user_playlist" class="p-2 rounded-lg w-full text-sm mt-4 mb-10">
+                        {% for playlist in playlists %}
+                        <option value="{{ playlist.0 }}">{{ playlist.1 }}</option>
+                        {% endfor %}
+                    </select>
+                    <a href="{% url 'play_song' id_konten=id_konten %}" class="border-2 border-bluebright text-bluebright rounded-xl py-2 px-6 hover:bg-bluebright hover:text-black duration-200 mt-6 mr-6">
+                        Kembali
+                    </a>
+                    <button type="submit" class="border-2 border-bluebright text-bluebright rounded-xl py-2 px-6 hover:bg-bluebright hover:text-black duration-200">
+                        Tambah
+                    </button>
+                </form>
             </div>
         </div>
     </div>
