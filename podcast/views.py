@@ -62,23 +62,23 @@ def daftar_podcast(cursor: CursorWrapper, request):
 
 @connectdb
 def daftar_episode(cursor: CursorWrapper, request):
-    podcast_name = request.GET.get('podcast')
+    podcast_id = request.GET.get('podcast')
 
-    if not podcast_name:
+    if not podcast_id:
         return HttpResponseNotFound('Podcast not found.')
 
     cursor.execute("""
-        SELECT id
+        SELECT judul
         FROM KONTEN
-        WHERE judul = %s;
-    """, (podcast_name,))
+        WHERE id = %s;
+    """, (podcast_id,))
     
     row = cursor.fetchone()
 
     if not row:
         return HttpResponseNotFound('Podcast not found.')
 
-    podcast_id = row[0]
+    podcast_name = row[0]
 
     cursor.execute("""
         SELECT id_episode, judul, deskripsi, tanggal_rilis, durasi
@@ -147,7 +147,6 @@ def add_podcast(cursor: CursorWrapper, request):
 def remove_podcast(cursor: CursorWrapper, request):
     if request.method == 'POST':
         podcastID = request.POST.get("id")
-        # print("podcast id: " + podcastID)
         
         # Query SQL untuk menghapus data konten dari tabel konten
         query = """

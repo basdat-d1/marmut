@@ -167,7 +167,7 @@
                             <td class="border border-graybright px-4 py-2 text-white text-center">{{ podcast.episode_count }}</td>
                             <td class="border border-graybright px-4 py-2 text-center">
                                 <button class="border-2 border-blue bg-blue text-white rounded-xl py-2 px-4 hover:bg-darkblue duration-200">
-                                    <a href="{% url 'podcast:daftar_episode' %}?podcast={{ podcast.title }}" class="text-white">See Episodes</a>
+                                    <a href="{% url 'podcast:daftar_episode' %}?podcast={{ podcast.id }}" class="text-white">See Episodes</a>
                                 </button>                        
                             </td>
                             <td class="border border-graybright px-4 py-2 text-center">
