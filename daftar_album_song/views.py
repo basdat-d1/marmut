@@ -4,6 +4,9 @@ from django.shortcuts import redirect, render
 from django.db.backends.utils import CursorWrapper
 from django.http import HttpResponseRedirect
 from utils.query import connectdb
+import uuid
+import random
+import datetime
 
 # Create your views here.
 
@@ -54,43 +57,12 @@ def list_album(cursor: CursorWrapper, request):
         'isPodcaster': request.session.get('is_podcaster'),
     }
 
-    # if request.method == 'POST':
-        # email = request.POST.get('album.0')
-        # password = request.POST.get('password')
-
-        # cursor.execute("SELECT * FROM AKUN WHERE email = %s", [email])
-        # user = cursor.fetchone()
-
-        # cursor.execute("SELECT * FROM LABEL WHERE email = %s", [email])
-        # label = cursor.fetchone()
-
-        # # Kalo email atau password salah
-        # if not user and not label:
-        #     context["message"] = "Email atau password salah"
-        #     return render(request, "login.html", context)
-
-        # # Jika password benar
-        # if user and user[1] == password:
-        #     return handle_pengguna_login(cursor, request, user)
-        # elif label and label[3] == password:
-        #     return handle_label_login(cursor, request, label)
-
     return render(request, 'list_album_songwriter_artist.html', context)
 
 def create_album(request):
 
     return render(request, 'create_album_songwriter_artist.html')
 
-def update_album(request):
-
-    dummy_album = {
-        "judul": "judul 1",
-        "label": "label 1",
-        "jumlah_lagu": "10",
-        "total_durasi": "300",
-    }
-
-    return render(request, 'update_album_songwriter_artist.html', dummy_album)
 
 @connectdb
 def list_song(cursor: CursorWrapper, request):
@@ -102,7 +74,7 @@ def list_song(cursor: CursorWrapper, request):
                    """)
     album_judul = cursor.fetchone()
 
-    query =(rf"""SELECT KONTEN.judul, SONG.total_play, SONG.total_download, KONTEN.durasi
+    query =(rf"""SELECT KONTEN.id, KONTEN.judul, SONG.total_play, SONG.total_download, KONTEN.durasi
                 FROM KONTEN, SONG
                 JOIN ALBUM ON SONG.id_album = ALBUM.id
                 WHERE ALBUM.id = '{id}' AND KONTEN.id = SONG.id_konten;
@@ -113,6 +85,7 @@ def list_song(cursor: CursorWrapper, request):
     print(album_judul[0])
     
     context = {
+        "album_id": id,
         "album_judul": album_judul[0],
         "songs": songs,
         'status_langganan': request.session.get('status_langganan'),
@@ -123,20 +96,154 @@ def list_song(cursor: CursorWrapper, request):
 
     return render(request, 'list_song_songwriter_artist.html', context)
 
-def create_song(request):
+@connectdb
+def create_song(cursor: CursorWrapper, request):
+    id= request.GET.get("id")
 
-    return render(request, 'create_song_songwriter_artist.html')
+    cursor.execute(rf"""SELECT judul 
+                   FROM ALBUM 
+                   WHERE ALBUM.id = '{id}';
+                   """)
+    album_judul = cursor.fetchone()
 
-def update_song(request):
+    try:
+        email = request.session.get('email')
+    except:
+        return HttpResponseRedirect(reverse("authentication:login_user"))
 
-    dummy_song = {
-        "judul": "judul 1",
-        "total_play": "0",
-        "total_download": "10",
-        "total_durasi": "300",
+    if request.method == 'POST':
+        judul = request.POST.get('judul')
+        artist = request.POST.get('artist')
+        songwriters = request.POST.getlist('songwriter')
+        genres = request.POST.getlist('genre')
+        durasi = request.POST.get('durasi')
+
+        print(judul)
+        print(artist)
+        print(songwriters)
+        print(genres)
+        print(durasi)
+
+        # insert data ke KONTEN
+        id_konten = str(uuid.uuid4())
+        judul_song = judul
+        tanggal_rilis = str(datetime.datetime.now())
+        tahun = "2024"
+        durasi = durasi
+        cursor.execute(
+            """INSERT INTO KONTEN(id, judul, tanggal_rilis, tahun, durasi) VALUES 
+                (%s, %s, %s, %s, %s)""", 
+                (id_konten, judul_song, tanggal_rilis, tahun, durasi)
+        )
+
+        # insert data ke SONG
+        cursor.execute("SELECT ARTIST.id FROM ARTIST JOIN AKUN ON AKUN.email = ARTIST.email_akun WHERE AKUN.nama = %s", [artist])
+        id_artist = cursor.fetchone()
+        cursor.execute(
+            """INSERT INTO SONG(id_konten, id_artist, id_album, total_play, total_download) VALUES 
+                (%s, %s, %s, %s, %s)""", 
+                (id_konten, id_artist, id, 0, 0)
+        )
+
+        # insert data ke royalti (songwriter)
+        for songwriter in songwriters:
+            print(str(songwriter))
+            print("runnn")
+            cursor.execute("SELECT id_pemilik_hak_cipta FROM SONGWRITER WHERE id = %s", [songwriter])
+            id_songwriter  = cursor.fetchone()
+            jumlah = random.randint(100, 999)
+            cursor.execute(
+                """INSERT INTO ROYALTI(id_pemilik_hak_cipta, id_song, jumlah) VALUES 
+                    (%s, %s, %s)""", 
+                    (id_songwriter[0], id_konten, jumlah)
+            )
+
+        # insert data ke royalti (artist)
+        cursor.execute("SELECT ARTIST.id_pemilik_hak_cipta FROM AKUN JOIN ARTIST ON ARTIST.email_akun = AKUN.email WHERE AKUN.nama = %s ", [artist])
+        id_artist = cursor.fetchone()
+        jumlah = random.randint(100, 999)
+        cursor.execute(
+            """INSERT INTO ROYALTI(id_pemilik_hak_cipta, id_song, jumlah) VALUES 
+                (%s, %s, %s)""", 
+                (id_artist[0], id_konten, jumlah)
+        )
+
+        # insert data ke royalti (label)
+        cursor.execute("SELECT LABEL.id_pemilik_hak_cipta FROM ALBUM JOIN LABEL ON ALBUM.id_label = LABEL.id WHERE ALBUM.id = %s ", [id])
+        id_label = cursor.fetchone()
+        jumlah = random.randint(100, 999)
+        cursor.execute(
+            """INSERT INTO ROYALTI(id_pemilik_hak_cipta, id_song, jumlah) VALUES 
+                (%s, %s, %s)""", 
+                (id_label[0], id_konten, jumlah)
+        )
+
+        # insert data ke songwriter_write_song
+        for songwriter in songwriters:
+            cursor.execute(
+                """INSERT INTO SONGWRITER_WRITE_SONG(id_songwriter, id_song) VALUES 
+                    (%s, %s)""", 
+                    (songwriter, id_konten)
+            )
+
+        # insert data ke genre
+        for genre in genres:
+            cursor.execute(
+                """INSERT INTO GENRE(id_konten, genre) VALUES 
+                    (%s, %s)""", 
+                    (id_konten, genre)
+            )
+
+        return HttpResponseRedirect(reverse('daftar_album_song:list_song')+ f'?id={id}')
+    
+    cursor.execute("SELECT DISTINCT genre FROM GENRE")
+    genre_list  = cursor.fetchall()
+    
+    cursor.execute("SELECT DISTINCT ARTIST.id, AKUN.nama FROM ARTIST, AKUN WHERE AKUN.email = ARTIST.email_akun")
+    artist_list  = cursor.fetchall()
+
+    cursor.execute("SELECT DISTINCT SONGWRITER.id, AKUN.nama FROM SONGWRITER, AKUN WHERE AKUN.email = SONGWRITER.email_akun")
+    songwriter_list  = cursor.fetchall()
+
+    cursor.execute("SELECT AKUN.nama FROM AKUN WHERE AKUN.email = %s ", [email])
+    nama_akun  = cursor.fetchone()
+
+    songwriter = ""
+
+    if request.session.get('is_songwriter') :
+        cursor.execute("SELECT SONGWRITER.id, AKUN.nama FROM AKUN JOIN SONGWRITER ON AKUN.email=SONGWRITER.email_akun WHERE AKUN.email = %s ", [email])
+        songwriter  = cursor.fetchone()
+
+    print(songwriter)
+    
+    context = {
+        "album_id": id,
+        "artist" : nama_akun[0],
+        "songwriter_checked" : songwriter,
+        "album_judul": album_judul[0],
+        "artist_list" : artist_list,
+        "songwriter_list" : songwriter_list,
+        "genre_list": genre_list,
+        'status_langganan': request.session.get('status_langganan'),
+        'isArtist': request.session.get('is_artist'),
+        'isSongwriter': request.session.get('is_songwriter'),
+        'isPodcaster': request.session.get('is_podcaster'),
     }
+    
+    return render(request, 'create_song_songwriter_artist.html', context)
 
-    return render(request, 'update_song_songwriter_artist.html', dummy_song)
+@connectdb
+def delete_song(cursor: CursorWrapper, request):
+    id_song= request.GET.get("id_song")
+
+    cursor.execute(rf"""SELECT id_album FROM SONG WHERE id_konten = '{id_song}';
+                   """)
+    id_album = cursor.fetchone()
+
+    cursor.execute(rf"""DELETE FROM konten WHERE id = '{id_song}';
+                   """)
+
+    return HttpResponseRedirect(reverse('daftar_album_song:list_song')+ f'?id={id_album[0]}')
 
 def list_album_label(request):
     dummy_album = {
