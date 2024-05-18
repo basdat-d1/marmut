@@ -120,8 +120,11 @@ def add_podcast(cursor: CursorWrapper, request):
         total_durasi = 0
         
         if not podcast_title or not podcast_genre:
-             return HttpResponseNotFound()
+            return HttpResponseNotFound()
         
+        if podcast_genre == "Select Genre":
+            return HttpResponseNotFound()
+            
         # Masukkan data ke dalam tabel KONTEN
         cursor.execute("""
             INSERT INTO KONTEN (id, judul, tanggal_rilis, tahun, durasi)
