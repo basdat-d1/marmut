@@ -4,7 +4,7 @@ from .views import (list_album, create_album, update_album, list_song, create_so
 app_name = 'daftar_album_song'
 
 urlpatterns = [
-    path('list-album/1', list_album, name='list-album/1'),
+    path('list-album/', list_album, name='list-album/'),
     path('create-album/1', create_album, name='create-album/1'),
     path('edit-album/1', update_album, name='edit-album/1'),
     path('list-album/1/songs', list_song, name='list-album/1/songs'),

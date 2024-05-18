@@ -1,132 +1,200 @@
+from utils.query import connectdb
+from django.urls import reverse
 from django.shortcuts import render
+from django.http import HttpResponseRedirect
+from django.db.backends.utils import CursorWrapper
 
-def dashboard_pengguna_biasa(request):
-    playlists = [
-        {
-            'judul': 'Argue get',
-            'jumlah_lagu': 11,
-            'total_durasi': 4596
-        },
-        {
-            'judul': 'Health say easy',
-            'jumlah_lagu': 91,
-            'total_durasi': 4188
-        },
-    ]
+@connectdb
+def dashboard_pengguna(cursor: CursorWrapper, request):
+    try:
+        email = request.session.get('email')
+    except:
+        return HttpResponseRedirect(reverse("authentication:login"))
+    
+    playlists = ""
+    podcasts = ""
+    albums = ""
+    songs = ""
 
-    dummy_pengguna_biasa = {
-        "nama": "Muhammad Hilal Darul Fauzan",
-        "email": "hilalfauzan9@gmail.com",
-        "kota_asal": "Jakarta",
-        "gender": "Laki-laki",
-        "tempat_lahir": "California",
-        "tanggal_lahir": "27 April 2004",
-        "role": "Pengguna Biasa",
-        "playlists": playlists
+    cursor.execute("SELECT * FROM AKUN WHERE email = %s", [email])
+    pengguna = cursor.fetchone()
+    
+    if (request.session.get('is_podcaster')):
+        query =(rf"""SELECT k.judul AS podcast_title, COUNT(e.id_episode) AS episode_count, COALESCE(SUM(e.durasi), 0) AS total_duration_minutes
+                FROM podcast AS p
+                JOIN konten AS k ON p.id_konten = k.id
+                LEFT JOIN episode AS e ON p.id_konten = e.id_konten_podcast
+                WHERE p.email_podcaster = '{email}'
+                GROUP BY k.judul;
+                """)
+        cursor.execute(query)
+        podcasts = cursor.fetchall()
+    if (request.session.get('is_artist')):
+        query =(rf"""SELECT KONTEN.judul, SONG.total_play, SONG.total_download
+                FROM KONTEN, SONG
+                JOIN ARTIST ON SONG.id_artist = ARTIST.id
+                WHERE ARTIST.email_akun = '{email}' AND KONTEN.id = SONG.id_konten;
+                """)
+        cursor.execute(query)
+        songs = cursor.fetchall()
+    if (request.session.get('is_songwriter')):
+        query =(rf"""SELECT konten.judul AS song_title, song.total_play, song.total_download
+                FROM songwriter_write_song
+                JOIN song ON songwriter_write_song.id_song = song.id_konten
+                JOIN konten ON song.id_konten = konten.id
+                JOIN songwriter ON songwriter_write_song.id_songwriter = songwriter.id
+                WHERE songwriter.email_akun = '{email}';
+                """)
+        cursor.execute(query)
+        songs = cursor.fetchall()
+
+    query =(rf"""SELECT judul, jumlah_lagu, total_durasi
+                FROM user_playlist
+                WHERE email_pembuat = '{email}';
+                """)
+    cursor.execute(query)
+    playlists = cursor.fetchall()
+
+    is_artist = request.session.get('is_artist')
+    is_songwriter = request.session.get('is_songwriter')
+    is_podcaster = request.session.get('is_podcaster')
+    status_langganan = request.session.get('status_langganan')
+    print("artist " + str(is_artist))
+    print("songwriter " + str(is_songwriter))
+    print("podcaster " + str(is_podcaster))
+    print("status langganan " + str(status_langganan))
+
+    records_song_artist, records_song_songwriter, records_podcast = [], [], []
+
+    records_user_playlist = fetch_user_playlist(cursor, email)
+
+    role_verified_list = []
+    if is_artist:
+        role_verified_list.append('Artist')
+    if is_songwriter:
+        role_verified_list.append('Songwriter')
+    if is_podcaster:
+        role_verified_list.append('Podcaster')
+    
+    role_verified = ', '.join(role_verified_list) if role_verified_list else "Pengguna Biasa"
+
+    gender = 'Perempuan' if request.session.get('gender') == 0 else 'Laki-laki'
+        
+    context = {
+        "nama": pengguna[2],
+        "email": email,
+        "kota_asal": pengguna[7],
+        "gender": gender,
+        'tempat_lahir': pengguna[4],
+        'tanggal_lahir': pengguna[5],
+        "role": request.session.get('roles'),
+        "playlists": playlists,
+        "podcasts": podcasts,
+        "albums": albums,
+        "songs": songs,
+        'role': 'pengguna',
+        'status': 'success',
+        'role_verified': role_verified,
+        'status_langganan': status_langganan,
+        'isArtist': is_artist,
+        'isSongwriter': is_songwriter,
+        'isPodcaster': is_podcaster,
+        'records_user_playlist': records_user_playlist,
+        'records_song_artist': records_song_artist,
+        'records_song_songwriter': records_song_songwriter,
+        'records_podcast': records_podcast,
+
+    }
+    return render(request, 'dashboard_pengguna.html', context)
+
+@connectdb
+def dashboard_label(cursor: CursorWrapper, request):
+    email = request.session.get('email')
+
+    albums = ""
+
+    cursor.execute("SELECT * FROM LABEL WHERE email = %s", [email])
+    label = cursor.fetchone()
+
+    if not label:
+        return HttpResponseRedirect(reverse('authentication:login'))
+
+    query =(rf"""SELECT ALBUM.judul, ALBUM.jumlah_lagu, ALBUM.total_durasi
+                 FROM ALBUM
+                 JOIN LABEL ON ALBUM.id_label = LABEL.id
+                 WHERE LABEL.email = '{email}';
+                 """)
+    cursor.execute(query)
+    albums = cursor.fetchall()
+
+    context = {
+        'role': 'label',
+        'status': 'success',
+        'id': str(label[0]),
+        'nama': label[1],
+        'email': label[2],
+        'kontak': label[4],
+        'id_pemilik_hak_cipta': str(label[5]),
+        'albums': albums,
     }
 
-    return render(request, 'pengguna/dashboard_pengguna_biasa.html', dummy_pengguna_biasa)
+    return render(request, 'dashboard_label.html', context)
 
-def dashboard_premium(request):
-    playlists = [
-        {
-            'judul': 'Radio ground everyone',
-            'jumlah_lagu': 39,
-            'total_durasi': 6664
-        },
-        {
-            'judul': 'Once respond voice',
-            'jumlah_lagu': 49,
-            'total_durasi': 6682
-        },
-    ]
+def fetch_user_data(cursor: CursorWrapper, email, records_song_artist, records_song_songwriter, records_podcast):
+    id_artist, id_songwriter, id_pemilik_hak_cipta_artist, id_pemilik_hak_cipta_songwriter = "", "", "", ""
 
-    dummy_premium = {
-        "nama": "Robert Vang",
-        "email": "donnaherring@gmail.com",
-        "kota_asal": "Lake Williamfurt",
-        "gender": "Laki-laki",
-        "tempat_lahir": "New Bridgettown",
-        "tanggal_lahir": "23 April 1998",
-        "role": "Pengguna Biasa",            # Dummy premium ini sebagai pengguna biasa yang berlangganan
-        "playlists": playlists
-    }
+    cursor.execute("SELECT * FROM ARTIST WHERE email_akun = %s", [email])
+    artist = cursor.fetchone()
+    if artist:
+        id_artist = artist[0]
+        id_pemilik_hak_cipta_artist = artist[2]
+        cursor.execute("SELECT * FROM SONG WHERE id_artist = %s", [id_artist])
+        artist_songs = cursor.fetchall()
+        for song in artist_songs:
+            id_song = song[0]
+            cursor.execute("SELECT judul, durasi FROM KONTEN WHERE id = %s", [id_song])
+            additional_detail_song = cursor.fetchone()
+            if additional_detail_song:
+                records_song_artist.append(song + additional_detail_song)
 
-    return render(request, 'pengguna/dashboard_premium.html', dummy_premium)
+    cursor.execute("SELECT * FROM SONGWRITER WHERE email_akun = %s", [email])
+    songwriter = cursor.fetchone()
+    if songwriter:
+        id_songwriter = songwriter[0]
+        id_pemilik_hak_cipta_songwriter = songwriter[2]
+        cursor.execute("SELECT id_song FROM SONGWRITER_WRITE_SONG WHERE id_songwriter = %s", [id_songwriter])
+        list_id_song = cursor.fetchall()
+        for song in list_id_song:
+            id_song = song[0]
+            cursor.execute("SELECT * FROM SONG WHERE id_konten = %s", [id_song])
+            records_song_awal = cursor.fetchone()
+            cursor.execute("SELECT judul, durasi FROM KONTEN WHERE id = %s", [id_song])
+            additional_detail_song = cursor.fetchone()
+            if records_song_awal and additional_detail_song:
+                records_song_songwriter.append(records_song_awal + additional_detail_song)
 
-def dashboard_podcaster(request):
-    podcasts = [
-        {
-            'judul': 'Record girl',
-            'jumlah_episode': 5,
-            'total_durasi': 167
-        },
-        {
-            'judul': 'Their thought discover',
-            'jumlah_episode': 10,
-            'total_durasi': 170
-        },
-    ]
+    cursor.execute("SELECT * FROM PODCASTER WHERE email = %s", [email])
+    podcaster = cursor.fetchone()
+    if podcaster:
+        cursor.execute("SELECT * FROM PODCAST WHERE email_podcaster = %s", [email])
+        list_id_podcast = cursor.fetchall()
+        for podcast in list_id_podcast:
+            id_podcast = podcast[0]
+            cursor.execute("""
+                SELECT k.id, k.judul, COUNT(*) AS jumlah_episode, k.durasi 
+                FROM KONTEN AS k 
+                JOIN EPISODE AS e ON e.id_konten_podcast = k.id 
+                WHERE k.id = %s 
+                GROUP BY k.id
+            """, [id_podcast])
+            records_podcast.append(cursor.fetchone())
 
-    dummy_podcaster = {
-        "nama": "Beth White",
-        "email": "hilljason@gmail.com",
-        "kota_asal": "Port Bradleyburgh",
-        "gender": "Laki-laki",
-        "tempat_lahir": "Ryanmouth",
-        "tanggal_lahir": "14 July 2000",
-        "role": "Podcaster",
-        "podcasts": podcasts
-    }
+    return id_artist, id_songwriter, id_pemilik_hak_cipta_artist, id_pemilik_hak_cipta_songwriter
 
-    return render(request, 'pengguna/dashboard_podcaster.html', dummy_podcaster)
+def fetch_user_playlist(cursor: CursorWrapper, email):
+    cursor.execute("SELECT * FROM USER_PLAYLIST WHERE email_pembuat = %s", [email])
+    return cursor.fetchall()
 
-def dashboard_artist_songwriter(request):
-    songs = [
-        {
-            'judul': 'Travel against my city',
-            'total_play': 142153,
-            'total_download': 10232
-        },
-        {
-            'judul': 'Their thought discover',
-            'total_play': 213243,
-            'total_download': 9921
-        },
-    ]
-
-    dummy_artist_songwriter = {
-        "nama": "Kelly Walsh",
-        "email": "barbaragreen@yahoo.com",
-        "kota_asal": "Michaelstad",
-        "gender": "Perempuan",
-        "tempat_lahir": "Jonesbury",
-        "tanggal_lahir": "21 September 1988",
-        "role": "Artist/Songwriter",
-        "songs": songs
-    }
-
-    return render(request, 'pengguna/dashboard_artist_songwriter.html', dummy_artist_songwriter)
-
-def dashboard_label(request):
-    albums = [
-        {
-            'judul': 'Enterprise-wide incremental superstructure',
-            'jumlah_lagu': 85,
-            'total_durasi': 421
-        },
-        {
-            'judul': 'Reactive uniform product',
-            'jumlah_lagu': 20,
-            'total_durasi': 326
-        },
-    ]
-
-    dummy_label = {
-        "nama": "Singleton, Welch and Rios",
-        "email": "derek22@hotmail.com",
-        "kontak": "7185100571",
-        "albums": albums
-    }
-
-    return render(request, 'label/dashboard_label.html', dummy_label)
+def is_premium(cursor: CursorWrapper, email):
+    cursor.execute("SELECT * FROM PREMIUM WHERE email = %s", [email])
+    return bool(cursor.fetchone())
