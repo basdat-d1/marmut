@@ -16,10 +16,10 @@ def convert_duration(minutes):
 
 @connectdb
 def show_podcast(cursor: CursorWrapper, request):
-    is_podcaster = request.session.get('is_podcaster', False)
-    is_artist = request.session.get('is_artist', False)
-    is_songwriter = request.session.get('is_songwriter', False)
-    status_langganan = request.session.get('status_langganan', 'Non-Premium')
+    is_podcaster = request.session.get('is_podcaster')
+    is_artist = request.session.get('is_artist')
+    is_songwriter = request.session.get('is_songwriter')
+    status_langganan = request.session.get('is_premium')
     
     query = """
     SELECT p.id_konten AS podcast_id, k.judul AS podcast_title, k.durasi AS total_duration,
