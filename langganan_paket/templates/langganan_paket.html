@@ -6,47 +6,64 @@
 {% endblock meta %}
 
 {% block content %}
-{% include "navbar/navbar_pengguna.html" %}
+{% include "navbar/navbar_pengguna.html" %} <!-- Masukkan navbar di sini -->
+
+<style>
+.text-black {
+    color: black;
+}
+
+.bg-gray-100 {
+    background-color: #f3f4f6;
+}
+
+.border-gray-400, .border-t-gray-400 {
+    border-color: #d1d5db;
+}
+</style>
+
 <section id="authentication" class="h-screen w-full xl:px-20 lg:px-10 sm:px-2 px-4 flex items-center justify-center">
-    <div class="w-full max-w-screen-md bg-gradient-to-b from-purple-600 to-purple-400 rounded-lg shadow-xl overflow-hidden">
+    <div class="w-full max-w-screen-md bg-gradient-to-bl from-indigo-500/20 pt-28">
         <h1 class="text-3xl font-semibold my-4 text-white text-center">Pilih Paket Langganan</h1>
 
+        <!-- Tombol Riwayat Transaksi -->
         <div class="flex justify-end mr-6 mb-4">
-            <a href="{% url 'langganan_paket:riwayat_transaksi' %}" class="border-2 border-blue text-blue rounded-xl py-2 px-4 hover:bg-blue hover:text-black duration-200">Riwayat Transaksi</a>
+            <a href="/langganan-paket/riwayat_transaksi" class="border-2 border-blue text-blue rounded-xl py-2 px-4 hover:bg-blue hover:text-black duration-200">Riwayat Transaksi</a>
         </div>
 
-        <div class="bg-gray bg-opacity-90 rounded-lg shadow-lg p-6">
-            <table class="w-full border-collapse border border-black-400">
-                <thead class="bg-gray-200">
+        <!-- Daftar Paket Langganan -->
+        <div class="bg-white bg-opacity-90 ">
+            <table class="w-full border-collapse border border-gray-400">
+                <thead class="bg-gradient-to-bl from-indigo-500/20 pt-28 min-h-screen">
                     <tr>
-                        <th class="px-6 py-3 text-center text-xs font-semibold uppercase text-black">Jenis</th>
-                        <th class="px-6 py-3 text-center text-xs font-semibold uppercase text-black">Harga</th>
-                        <th class="px-6 py-3 text-center text-xs font-semibold uppercase text-black">Action</th>
+                        <th class="px-6 py-3 text-center text-xs font-semibold uppercase text-gray-600 text-black">Jenis</th>
+                        <th class="px-6 py-3 text-center text-xs font-semibold uppercase text-gray-600 text-black">Harga</th>
+                        <th class="px-6 py-3 text-center text-xs font-semibold uppercase text-gray-600 text-black">Action</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td class="border border-black-400 px-4 py-2 text-center text-black">1 Bulan</td>
-                        <td class="border border-black-400 px-4 py-2 text-center text-black">Rp54.900</td>
-                        <td class="border border-black-400 px-4 py-2 text-center text-black">
+                    <tr class="bg-gray-100">
+                        <td class="border border-gray-400 px-4 py-2 text-center text-black">1 Bulan</td>
+                        <td class="border border-gray-400 px-4 py-2 text-center text-black">Rp54.900</td>
+                        <td class="border border-gray-400 px-4 py-2 text-center text-black">
                             <a href="/langganan-paket/pembayaran_paket/?jenis=1_bulan&harga=54900" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded" style="background-color: #3b82f6;">Berlangganan</a>
                         </td>
                     </tr>
-                    <tr>
-                        <td class="border border-black-400 px-4 py-2 text-center text-black">3 Bulan</td>
-                        <td class="border border-black-400 px-4 py-2 text-center text-black">Rp150.000</td>
-                        <td class="border border-black-400 px-4 py-2 text-center text-black">
+                    <tr class="bg-white">
+                        <td class="border border-gray-400 px-4 py-2 text-center text-black">3 Bulan</td>
+                        <td class="border border-gray-400 px-4 py-2 text-center text-black">Rp150.000</td>
+                        <td class="border border-gray-400 px-4 py-2 text-center text-black">
                             <a href="/langganan-paket/pembayaran_paket/?jenis=3_bulan&harga=150000" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded" style="background-color: #3b82f6;">Berlangganan</a>
                         </td>
                     </tr>
-                    <tr>
-                        <td class="border border-black-400 px-4 py-2 text-center text-black">6 Bulan</td>
-                        <td class="border border-black-400 px-4 py-2 text-center text-black">Rp290.000</td>
-                        <td class="border border-black-400 px-4 py-2 text-center text-black">
+                    <tr class="bg-gray-100">
+                        <td class="border border-gray-400 px-4 py-2 text-center text-black">6 Bulan</td>
+                        <td class="border border-gray-400 px-4 py-2 text-center text-black">Rp290.000</td>
+                        <td class="border border-gray-400 px-4 py-2 text-center text-black">
                             <a href="/langganan-paket/pembayaran_paket/?jenis=6_bulan&harga=290000" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded" style="background-color: #3b82f6;">Berlangganan</a>
                         </td>
                     </tr>
-                    <tr>
+                    <tr class="bg-white">
                         <td class="border border-gray-400 px-4 py-2 text-center text-black">1 Tahun</td>
                         <td class="border border-gray-400 px-4 py-2 text-center text-black">Rp500.000</td>
                         <td class="border border-gray-400 px-4 py-2 text-center text-black">

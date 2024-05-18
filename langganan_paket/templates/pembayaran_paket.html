@@ -1,3 +1,9 @@
+<style>
+    .text-gray-900 {
+        color: #4B5563; /* Ubah warna teks menjadi warna abu-abu yang lebih terang */
+    }
+</style>
+
 {% extends 'base.html' %}
 {% load static %}
 
@@ -8,20 +14,20 @@
 {% block content %}
 <!-- Navbar -->
 {% include "navbar/navbar_pengguna.html" %}
-<hr class="border-b border-gray-400 mb-4 mt-20">
+<div class="bg-gradient-to-bl from-indigo-500/20 pt-28 min-h-screen">
 
-<div class="container mx-auto px-4 mt-16 text-center">
+<div class="container mx-auto px-4 mt-4 text-center">
     <h1 class="text-3xl font-semibold my-4 text-white">Pembayaran Paket</h1>
     <div class="my-8">
         <h2 class="text-lg font-semibold text-white mb-4">Informasi Paket yang Ingin Dibeli:</h2>
         <table class="w-full max-w-md mx-auto bg-white shadow-md rounded-lg overflow-hidden">
             <tr>
-                <td class="px-4 py-2 text-black font-bold">Jenis</td>
-                <td class="px-4 py-2 text-black font-bold" id="jenis"></td>
+                <td class="px-4 py-2 font-semibold text-gray-900">Jenis</td> <!-- Hapus class border dan tambahkan padding, tambahkan class text-gray-900 -->
+                <td class="px-4 py-2 text-gray-900" id="jenis"></td> <!-- Hapus class border dan tambahkan padding, tambahkan class text-gray-900 -->
             </tr>
             <tr>
-                <td class="px-4 py-2 text-black font-bold">Harga</td>
-                <td class="px-4 py-2 text-black font-bold" id="harga"></td>
+                <td class="px-4 py-2 font-semibold text-gray-900">Harga</td> <!-- Hapus class border dan tambahkan padding, tambahkan class text-gray-900 -->
+                <td class="px-4 py-2 text-gray-900" id="harga"></td> <!-- Hapus class border dan tambahkan padding, tambahkan class text-gray-900 -->
             </tr>
         </table>        
     </div>

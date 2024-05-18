@@ -10,28 +10,26 @@
 {% include "navbar/navbar_pengguna.html" %} <!-- Masukkan navbar di sini -->
 
 <!-- Content -->
-<hr class="border-b border-gray-400 mb-4 mt-20"> <!-- Garis di akhir navbar -->
+<div class="bg-gradient-to-bl from-indigo-500/20 pt-28 min-h-screen"> <!-- Garis di akhir navbar -->
 
 <div class="container mx-auto px-4 mt-16"> <!-- Tambahkan margin top yang lebih besar di sini -->
-    <div class="bg-gradient-to-b from-purple-600 to-purple-400 rounded-lg shadow-xl overflow-hidden">
-        <h1 class="text-3xl font-semibold my-4 text-white text-center">Downloaded Songs</h1>
+    <h1 class="text-3xl font-semibold my-4 text-white text-center">Downloaded Songs</h1>
 
-        <!-- Daftar Lagu -->
-        <div class="bg-white bg-opacity-90 rounded-lg shadow-lg p-6">
-            <table class="min-w-full divide-y divide-gray-300">
-                <thead class="bg-gray-200">
-                    <tr>
-                        <th class="px-6 py-3 text-left text-xs font-semibold uppercase text-gray-600">Judul Lagu</th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold uppercase text-gray-600">Oleh</th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold uppercase text-gray-600">Tanggal Download</th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold uppercase text-gray-600">Actions</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-300" id="downloadedSongsBody">
-                    <!-- Data lagu diunduh akan ditampilkan di sini -->
-                </tbody>
-            </table>
-        </div>
+    <!-- Daftar Lagu -->
+    <div class="bg-white bg-opacity-90 rounded-lg shadow-lg p-6">
+        <table class="min-w-full divide-y divide-gray-300">
+            <thead class="bg-gray-200">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase text-black">Judul Lagu</th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase text-black">Oleh</th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase text-black">Tanggal Download</th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase text-black">Actions</th>
+                </tr>
+            </thead>            
+            <tbody class="divide-y divide-gray-300" id="downloadedSongsBody">
+                <!-- Data lagu diunduh akan ditampilkan di sini -->
+            </tbody>
+        </table>
     </div>
 </div>
 

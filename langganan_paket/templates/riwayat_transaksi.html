@@ -1,3 +1,9 @@
+<style>
+    .text-black {
+        color: black; /* Mengatur warna teks menjadi hitam */
+    }
+</style>
+
 {% extends 'base.html' %}
 {% load static %}
 
@@ -7,9 +13,9 @@
 
 {% block content %}
 {% include "navbar/navbar_pengguna.html" %}
-<hr class="border-b border-gray-400 mb-4 mt-20">
+<div class="bg-gradient-to-bl from-indigo-500/20 pt-28 min-h-screen">
 
-<div class="container mx-auto px-4 mt-16">
+<div class="container mx-auto px-4 mt-4">
     <h1 class="text-3xl font-bold my-4 text-white text-center">Riwayat Transaksi Paket</h1>
     <div class="overflow-x-auto">
         <table class="w-full table-auto border-collapse border border-gray-400 bg-white shadow-md rounded-lg">
@@ -25,11 +31,11 @@
             <tbody>
                 {% for transaksi in riwayat_transaksi %}
                 <tr>
-                    <td class="border px-4 py-2 text-center font-semibold">{{ transaksi.jenis }}</td> <!-- Teks center dan padding -->
-                    <td class="border px-4 py-2 text-center">{{ transaksi.tanggal_dimulai }}</td>
-                    <td class="border px-4 py-2 text-center">{{ transaksi.tanggal_berakhir }}</td>
-                    <td class="border px-4 py-2 text-center">{{ transaksi.metode_pembayaran }}</td>
-                    <td class="border px-4 py-2 text-center">{{ transaksi.nominal }}</td>
+                    <td class="border px-4 py-2 text-center font-semibold text-black">{{ transaksi.jenis }}</td> <!-- Teks center, bold, dan padding, serta warna teks hitam -->
+                    <td class="border px-4 py-2 text-center text-black">{{ transaksi.tanggal_dimulai }}</td> <!-- Teks center, dan padding, serta warna teks hitam -->
+                    <td class="border px-4 py-2 text-center text-black">{{ transaksi.tanggal_berakhir }}</td> <!-- Teks center, dan padding, serta warna teks hitam -->
+                    <td class="border px-4 py-2 text-center text-black">{{ transaksi.metode_pembayaran }}</td> <!-- Teks center, dan padding, serta warna teks hitam -->
+                    <td class="border px-4 py-2 text-center text-black">{{ transaksi.nominal }}</td> <!-- Teks center, dan padding, serta warna teks hitam -->                    
                 </tr>
                 {% endfor %}
             </tbody>
