@@ -2,9 +2,10 @@ import uuid
 import random
 import datetime
 import re
+from django.contrib import messages
 from django.urls import reverse
 from django.shortcuts import redirect, render
-from django.contrib import messages
+from django.views.decorators.csrf import csrf_exempt
 from django.db.backends.utils import CursorWrapper
 from django.http import HttpResponseRedirect
 from utils.query import connectdb
@@ -16,6 +17,7 @@ def register(request):
     return render(request, 'register.html')
 
 @connectdb
+@csrf_exempt
 def register_pengguna(cursor: CursorWrapper, request):
     if request.method == 'POST':
         email = request.POST.get('email')
@@ -72,14 +74,14 @@ def register_pengguna(cursor: CursorWrapper, request):
                 id_artist = str(uuid.uuid4())
                 cursor.execute('SELECT id FROM PEMILIK_HAK_CIPTA')
                 ids = cursor.fetchall()
-                id_pemilik_hak_cipta = str(random.choice(ids)[0])
+                id_pemilik_hak_cipta = str(uuid.uuid4())
                 cursor.execute("INSERT INTO ARTIST(id, email_akun, id_pemilik_hak_cipta) VALUES (%s, %s, %s)",
                                 (id_artist, email, id_pemilik_hak_cipta))
             elif role == "Songwriter":
                 id_songwriter = str(uuid.uuid4())
                 cursor.execute('SELECT id FROM PEMILIK_HAK_CIPTA')
                 ids = cursor.fetchall()
-                id_pemilik_hak_cipta = str(random.choice(ids)[0])
+                id_pemilik_hak_cipta = str(uuid.uuid4())
                 cursor.execute("INSERT INTO SONGWRITER(id, email_akun, id_pemilik_hak_cipta) VALUES (%s, %s, %s)",
                                 (id_songwriter, email, id_pemilik_hak_cipta))
         
@@ -89,6 +91,7 @@ def register_pengguna(cursor: CursorWrapper, request):
     return render(request, 'registration_form/register_pengguna.html')
 
 @connectdb
+@csrf_exempt
 def register_label(cursor: CursorWrapper, request):
     if request.method == 'POST':
         email = request.POST.get('email')
@@ -141,6 +144,7 @@ def register_label(cursor: CursorWrapper, request):
     return render(request, 'registration_form/register_label.html')
 
 @connectdb
+@csrf_exempt
 def login(cursor: CursorWrapper, request):
     context = {}
 
@@ -213,8 +217,6 @@ def handle_pengguna_login(cursor: CursorWrapper, request, user):
 def handle_label_login(cursor: CursorWrapper, request, label):
     email = label[2]
     id_label = label[0]
-    cursor.execute("SELECT * FROM ALBUM WHERE id_label = %s", [str(id_label)])
-    albums = cursor.fetchall()
 
     request.session["email"] = email
     request.session["role"] = 'label'
@@ -285,6 +287,7 @@ def is_premium(cursor: CursorWrapper, email):
     cursor.execute("SELECT * FROM PREMIUM WHERE email = %s", [email])
     return bool(cursor.fetchone())
 
+@csrf_exempt
 def logout(request):
     request.session.flush()
     return HttpResponseRedirect(reverse('authentication:authentication'))

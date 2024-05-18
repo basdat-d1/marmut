@@ -4,8 +4,9 @@ from django.db import connection
 def connectdb(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
+        res = ""
         with connection.cursor() as cursor:
-            # cursor.execute("SET search_path to MARMUT;")
-            return func(cursor, *args, **kwargs)
-        
+            res = func(cursor, *args, **kwargs)
+            
+        return res
     return wrapper
