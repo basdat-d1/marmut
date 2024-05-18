@@ -10,14 +10,14 @@
         </div>
         <div class="flex gap-5 items-center">
             <a href="{% url 'dashboard:dashboard_pengguna' %}" class="hover:bg-blue-700 px-3 py-2 rounded">Dashboard</a>
-            <a href="{% url 'lihat_chart:show_chart' %}" class="hover:bg-blue-700 px-3 py-2 rounded">Chart</a>
+            <a href="/lihat_chart" class="hover:bg-blue-700 px-3 py-2 rounded">Chart</a>
             <a href="{% url 'user_playlist:user_playlist' %}" class="hover:bg-blue-700 px-3 py-2 rounded">Playlist</a>
-            <a href="{% url 'langganan_paket:langganan_paket' %}" class="hover:bg-blue-700 px-3 py-2 rounded">Subscription</a>    
+            <a href="/langganan-paket" class="hover:bg-blue-700 px-3 py-2 rounded">Subscription</a>    
             {% if request.session.is_premium %}
-                <a href="{% url 'downloaded_songs:downloaded_songs' %}" class="hover:bg-blue-700 px-3 py-2 rounded">Downloaded Songs</a>
+                <a href="/downloaded-songs" class="hover:bg-blue-700 px-3 py-2 rounded">Downloaded Songs</a>
             {% endif %}
             {% if request.session.is_podcaster %}
-                <a href="{% url 'podcast:daftar_podcast' %}" class="hover:bg-blue-700 px-3 py-2 rounded">Podcast</a>
+                <a href="/kelola_podcast" class="hover:bg-blue-700 px-3 py-2 rounded">Podcast</a>
             {% endif %}
             {% if request.session.is_artist or request.session.is_songwriter %}
                 <a href="/kelola_album_songs" class="hover:bg-blue-700 px-3 py-2 rounded">Album & Songs</a>
