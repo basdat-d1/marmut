@@ -1,3 +1,9 @@
+<style>
+    .text-black {
+        color: black; /* Mengatur warna teks menjadi hitam */
+    }
+</style>
+
 {% extends 'base.html' %}
 {% load static %}
 
@@ -26,11 +32,11 @@
             <tbody>
                 {% for transaksi in riwayat_transaksi %}
                 <tr>
-                    <td class="border px-4 py-2 text-center font-semibold">{{ transaksi.jenis }}</td> <!-- Teks center dan padding -->
-                    <td class="border px-4 py-2 text-center">{{ transaksi.tanggal_dimulai }}</td>
-                    <td class="border px-4 py-2 text-center">{{ transaksi.tanggal_berakhir }}</td>
-                    <td class="border px-4 py-2 text-center">{{ transaksi.metode_pembayaran }}</td>
-                    <td class="border px-4 py-2 text-center">{{ transaksi.nominal }}</td>
+                    <td class="border px-4 py-2 text-center font-semibold text-black">{{ transaksi.jenis }}</td> <!-- Teks center, bold, dan padding, serta warna teks hitam -->
+                    <td class="border px-4 py-2 text-center text-black">{{ transaksi.tanggal_dimulai }}</td> <!-- Teks center, dan padding, serta warna teks hitam -->
+                    <td class="border px-4 py-2 text-center text-black">{{ transaksi.tanggal_berakhir }}</td> <!-- Teks center, dan padding, serta warna teks hitam -->
+                    <td class="border px-4 py-2 text-center text-black">{{ transaksi.metode_pembayaran }}</td> <!-- Teks center, dan padding, serta warna teks hitam -->
+                    <td class="border px-4 py-2 text-center text-black">{{ transaksi.nominal }}</td> <!-- Teks center, dan padding, serta warna teks hitam -->                    
                 </tr>
                 {% endfor %}
             </tbody>
