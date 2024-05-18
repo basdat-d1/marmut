@@ -112,12 +112,15 @@ def daftar_episode(cursor: CursorWrapper, request):
 def add_podcast(cursor: CursorWrapper, request):
     if request.method == 'POST':
         email = request.session.get('email')
-        podcast_title = request.POST.get("title")
-        podcast_genre = request.POST.get("genre")
+        podcast_title = request.POST.get("title").strip()
+        podcast_genre = request.POST.get("genre").strip()
         id_konten = str(uuid4())
         tanggal_rilis = str(datetime.now().date())
         tahun = datetime.now().year
         total_durasi = 0
+        
+        if not podcast_title or not podcast_genre:
+             return HttpResponseNotFound()
         
         # Masukkan data ke dalam tabel KONTEN
         cursor.execute("""
@@ -167,8 +170,16 @@ def add_episode(cursor: CursorWrapper, request):
     if request.method == 'POST':
         podcast_id = request.POST.get("pod_id")
         episode_title = request.POST.get("ep_title")
-        episode_duration = int(request.POST.get("ep_duration")) * 60
-        episode_description = request.POST.get("ep_description")
+        episode_description = request.POST.get("ep_description")        
+        episode_duration_str = request.POST.get("ep_duration")
+        
+        if not episode_title or not episode_description:
+            return HttpResponseNotFound()
+
+        if not episode_duration_str or int(episode_duration_str) <= 0:
+            return HttpResponseNotFound()
+        
+        episode_duration = int(episode_duration_str) * 60
         id_episode = str(uuid4())
         tanggal_rilis = str(datetime.now().date())
         

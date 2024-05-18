@@ -11,9 +11,9 @@
     id="AddPodcastModal" style="display: none;">
     <div class="bg-white rounded-lg shadow-lg p-4 w-full sm:w-96 max-w-4xl">
         <div class="flex justify-center mb-4">
-            <h2 class="text-3xl font-bold">Add Podcast</h2>
+            <h2 class="text-3xl font-bold text-black">Add Podcast</h2>
         </div>
-        <form id="addPodcastForm" class="space-y-4">
+        <form id="addPodcastForm" class="space-y-4 text-black">
             {% csrf_token %}
             <div>
                 <label for="title" class="block text-sm font-medium text-gray-700">Title:</label>
@@ -27,7 +27,7 @@
                         <button type="button" id="genreDropdownBtn" name="genreDropdownBtn" class="w-full px-3 py-2 text-left border border-black rounded-md shadow-md focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" onclick="toggleDropdown()">
                             Select Genre
                         </button>
-                        <ul id="genreDropdown" class="absolute hidden z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
+                        <ul id="genreDropdown" class="absolute hidden z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg text-black">
                             {% for genre in genres %}
                                 <li onclick="selectGenre('{{ genre }}')">{{ genre }}</li>
                             {% endfor %}
@@ -54,9 +54,9 @@
     id="AddEpisodeModal" style="display: none;">
     <div class="bg-white rounded-lg shadow-lg p-4 w-full sm:w-96 max-w-4xl">
         <div class="flex justify-center mb-4">
-            <h2 class="text-3xl font-bold" id="modalEpisodeTitle">Add Episode to Podcast</h2>
+            <h2 class="text-3xl font-bold text-black" id="modalEpisodeTitle">Add Episode to Podcast</h2>
         </div>
-        <form id="addEpisodeForm" class="space-y-4">
+        <form id="addEpisodeForm" class="space-y-4 text-black">
             <div>
                 <label for="title" class="block text-sm font-medium text-gray-700">Title:</label>
                 <input type="text" id="episodeTitle" name="episodeTitle"
@@ -70,7 +70,7 @@
             <div>
                 <label for="duration" class="block text-sm font-medium text-gray-700">Duration (hours):</label>
                 <input type="number" id="episodeDuration" name="episodeDuration"
-                    class="mt-1 block w-full px-3 py-2 border border-black rounded-md shadow-md focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    class="mt-1 block w-full px-3 py-2 border border-black rounded-md shadow-md focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" min="1">
             </div>
             <div>
                 <input type="hidden" id="podcastEpisode" name="podcastEpisode">
@@ -93,9 +93,9 @@
 <div class="fixed inset-0 z-50 overflow-auto bg-black bg-opacity-50 flex justify-center items-center" id="DeletePodcastModal" style="display: none;">
     <div class="bg-white rounded-lg shadow-lg p-4 w-full sm:w-96 max-w-4xl">
         <div class="flex justify-center mb-4">
-            <h2 class="text-3xl font-bold">Confirm Delete</h2>
+            <h2 class="text-3xl font-bold text-black">Confirm Delete</h2>
         </div>
-        <div class="text-center" id="deleteModalTitle">
+        <div class="text-center text-black" id="deleteModalTitle">
             <p>Are you sure you want to delete this podcast?</p>
         </div>
         <form id="deleteForm">
@@ -118,9 +118,9 @@
 <div class="fixed inset-0 z-50 overflow-auto bg-black bg-opacity-50 flex justify-center items-center" id="showAlertModal" style="display: none;">
     <div class="bg-white rounded-lg shadow-lg p-4 w-full sm:w-96 max-w-4xl">
         <div class="flex justify-center mb-4">
-            <h2 class="text-3xl font-bold" id="AlertModalHeader">placholder</h2>
+            <h2 class="text-3xl font-bold text-black" id="AlertModalHeader">placholder</h2>
         </div>
-        <div class="text-center" id="AlertModalText">
+        <div class="text-center text-black" id="AlertModalText">
             <p>placeholder</p>
         </div>
         <div class="flex justify-end mt-4">
@@ -193,9 +193,8 @@
         {% endif %}
     </div>
     <div class="flex justify-center mt-2">
-        <button onclick="window.history.back()"
-            class="border-2 border-blue text-blue rounded-xl py-2 px-4 hover:bg-blue hover:text-white duration-200 text-2xl">
-            Back
+        <button class="border-2 border-blue text-blue rounded-xl py-2 px-4 hover:bg-blue hover:text-white duration-200 text-2xl">
+            <a href="{% url 'dashboard:dashboard_pengguna' %}">Back</a>
         </button>
     </div>
 </div>
@@ -337,7 +336,7 @@
                 toggleAlertModal("Your new episode has been successfully added!", "Sucess");
             },
             error: function(error) {
-                toggleAlertModal("Error deleting episode.", "Fail");
+                toggleAlertModal("Error adding episode.", "Fail");
             }
         });
         toggleModalEpisode();
