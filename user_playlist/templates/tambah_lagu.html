@@ -2,22 +2,22 @@
 {% load static %}
 
 {% block meta %}
-<title>Dashboard Pengguna Biasa</title>
+<title>Tambah Lagu</title>
 {% endblock meta %}
 
 {% block content %}
-{% include "navbar/pengguna/navbar_pengguna_biasa.html" %}
-<div class="bg-gradient-to-bl from-indigo-500/20 pt-20 pb-20 h-screen flex justify-center items-center">
+{% include "navbar/navbar_pengguna.html" %}
+<div class="bg-gradient-to-bl from-indigo-500/20 min-h-screen flex items-center justify-center py-20">
     <div class="text-center">
-        <div class="bg-gray/20 rounded-3xl shadow-inner p-10" style="max-width: 100%; max-height: 120%;">
+        <div class="bg-gray/20 rounded-3xl shadow-inner p-10 mx-auto" style="max-width: 40rem;">
             <div class="mb-8">
                 <h2 class="text-3xl text-white font-bold mt-4 mb-10">Tambah Lagu</h2>
-                <form action="#" method="POST">
+                <form method="post" action="{% url 'user_playlist:tambah_lagu_playlist' id_user_playlist %}">
                     {% csrf_token %}
                     <div class="flex flex-col mt-4 mb-4">
-                        <select id="songDropdown" name="song_id" class="p-2 rounded-lg w-full text-sm">
-                            {% for song in all_songs %}
-                            <option value="{{ song.id }}">{{ song.title }} - {{ song.artist }}</option>
+                        <select id="songDropdown" name="id_song" class="p-2 rounded-lg w-full text-lg text-black">
+                            {% for song in song_choices %}
+                            <option value="{{ song.0 }}">{{ song.1 }}</option>
                             {% endfor %}
                         </select>
                     </div>
