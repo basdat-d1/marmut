@@ -23,16 +23,18 @@
 </style>
 
 <section id="authentication" class="h-screen w-full xl:px-20 lg:px-10 sm:px-2 px-4 flex items-center justify-center">
-    <div class="w-full max-w-screen-md bg-gradient-to-b from-purple-600 to-purple-400 rounded-lg shadow-xl overflow-hidden">
+    <div class="w-full max-w-screen-md bg-gradient-to-bl from-indigo-500/20 pt-28">
         <h1 class="text-3xl font-semibold my-4 text-white text-center">Pilih Paket Langganan</h1>
 
+        <!-- Tombol Riwayat Transaksi -->
         <div class="flex justify-end mr-6 mb-4">
-            <a href="{% url 'langganan_paket:riwayat_transaksi' %}" class="border-2 border-blue text-blue rounded-xl py-2 px-4 hover:bg-blue hover:text-black duration-200">Riwayat Transaksi</a>
+            <a href="/langganan-paket/riwayat_transaksi" class="border-2 border-blue text-blue rounded-xl py-2 px-4 hover:bg-blue hover:text-black duration-200">Riwayat Transaksi</a>
         </div>
 
-        <div class="bg-gray bg-opacity-90 rounded-lg shadow-lg p-6">
-            <table class="w-full border-collapse border border-black-400">
-                <thead class="bg-gray-200">
+        <!-- Daftar Paket Langganan -->
+        <div class="bg-white bg-opacity-90 ">
+            <table class="w-full border-collapse border border-gray-400">
+                <thead class="bg-gradient-to-bl from-indigo-500/20 pt-28 min-h-screen">
                     <tr>
                         <th class="px-6 py-3 text-center text-xs font-semibold uppercase text-gray-600 text-black">Jenis</th>
                         <th class="px-6 py-3 text-center text-xs font-semibold uppercase text-gray-600 text-black">Harga</th>
