@@ -13,43 +13,47 @@
             <h1 class="text-4xl font-bold text-white mb-4 text-center">Podcast</h1>
         </div>
 
-        {% for podcast in podcasts %}
-        <div class="flex justify-center">
-            <div class="bg-gray/20 rounded-3xl p-8 shadow-lg w-full max-w-3xl mb-14">
-                <h2 class="text-2xl font-bold text-white mb-4">{{ podcast.title }}</h2>
-                <div class="grid grid-cols-2 gap-6">
-                    <div>
-                        <p class="text-lg text-white"><span class="font-bold">Genre:</span> {{ podcast.genres }}</p>
-                        <p class="text-lg text-white"><span class="font-bold">Podcaster:</span> {{ podcast.podcaster }}</p>
+            {% for podcast in podcasts %}
+            <div class="flex justify-center">
+                <div class="bg-gray/20 rounded-3xl p-8 shadow-lg w-full max-w-3xl mb-14">
+                    <h2 class="text-2xl font-bold text-white mb-4">{{ podcast.title }}</h2>
+                    <div class="grid grid-cols-2 gap-6">
+                        <div>
+                            <p class="text-lg text-white"><span class="font-bold">Genre:</span> {{ podcast.genres }}</p>
+                            <p class="text-lg text-white"><span class="font-bold">Podcaster:</span> {{ podcast.podcaster }}</p>
+                        </div>
+                        <div>
+                            <p class="text-lg text-white"><span class="font-bold">Duration:</span> {{ podcast.total_duration }}</p>
+                            <p class="text-lg text-white"><span class="font-bold">Release Date:</span> {{ podcast.podcast_release_date }}</p>
+                        </div>
                     </div>
-                    <div>
-                        <p class="text-lg text-white"><span class="font-bold">Duration:</span> {{ podcast.total_duration }}</p>
-                    </div>
+                    {% if podcast.episodes %}
+                        <table class="table-auto w-full border-collapse border border-gray-300 mt-6 mb-3">
+                            <thead>
+                                <tr>
+                                    <th class="border border-gray-300 px-4 py-2 text-center text-white">Episode</th>
+                                    <th class="border border-gray-300 px-4 py-2 text-center text-white">Description</th>
+                                    <th class="border border-gray-300 px-4 py-2 text-center text-white">Duration</th>
+                                    <th class="border border-gray-300 px-4 py-2 text-center text-white">Release Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for episode in podcast.episodes %}
+                                <tr>
+                                    <td class="border border-gray-300 px-4 py-2 text-white">{{ episode.judul }}</td>
+                                    <td class="border border-gray-300 px-4 py-2 text-white">{{ episode.deskripsi }}</td>
+                                    <td class="border border-gray-300 px-4 py-2 text-white">{{ episode.durasi_episode }}</td>
+                                    <td class="border border-gray-300 px-4 py-2 text-white">{{ episode.tanggal_episode }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <h2 class="text-2xl font-bold text-white mb-4 mt-14 text-center">No episodes available for this podcast.</h2>
+                    {% endif %}
                 </div>
-
-                <table class="table-auto w-full border-collapse border border-gray-300 mt-6 mb-3">
-                    <thead>
-                        <tr>
-                            <th class="border border-gray-300 px-4 py-2 text-center text-white">Episode</th>
-                            <th class="border border-gray-300 px-4 py-2 text-center text-white">Description</th>
-                            <th class="border border-gray-300 px-4 py-2 text-center text-white">Duration</th>
-                            <th class="border border-gray-300 px-4 py-2 text-center text-white">Release Date</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for episode in podcast.episodes %}
-                        <tr>
-                            <td class="border border-gray-300 px-4 py-2 text-white">{{ episode.judul }}</td>
-                            <td class="border border-gray-300 px-4 py-2 text-white">{{ episode.deskripsi }}</td>
-                            <td class="border border-gray-300 px-4 py-2 text-white">{{ episode.durasi_episode }}</td>
-                            <td class="border border-gray-300 px-4 py-2 text-white">{{ episode.tanggal_episode }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
             </div>
-        </div>
-        {% endfor %}
+            {% endfor %}
         <div class="flex justify-center mt-4 mb-8">
             <button onclick="window.history.back()" class="border-2 border-blue text-blue rounded-xl py-2 px-4 hover:bg-blue hover:text-white duration-200 text-xl">Back</button>
         </div>
