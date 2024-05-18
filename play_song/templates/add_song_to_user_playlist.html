@@ -9,24 +9,24 @@
 {% include "navbar/navbar_pengguna.html" %}
 <div class="bg-gradient-to-bl from-indigo-500/20 pt-20 pb-20 h-screen flex justify-center items-center">
     <div class="text-center w-full max-w-xl mx-auto">
-        <div class="bg-gray-800/20 rounded-3xl shadow-inner p-10">
+        <div class="bg-gray/20 rounded-3xl shadow-inner p-10" style="max-width: 100%;">
             <h2 class="text-3xl text-white font-bold mb-10">Add Song to User Playlist</h2>
             <div class="mb-10">
                 <p class="text-white">Judul: {{ song_title }}</p>
                 <p class="text-white mb-10">Artist: {{ artist }}</p>
                 <form method="POST" action="{% url 'play_song:add_song_to_user_playlist' id_konten=id_konten %}">
                     {% csrf_token %}
-                    <label for="playlistDropdown" class="block text-white mt-10 text-left">Playlist:</label>
+                    <label for="playlistDropdown" class="flex text-white mt-10">Playlist:</label>
                     <select id="playlistDropdown" name="id_user_playlist" class="p-2 rounded-lg w-full text-lg text-black mt-4 mb-10" required>
                         {% for playlist in playlists %}
                         <option value="{{ playlist.0 }}">{{ playlist.1 }}</option>
                         {% endfor %}
                     </select>
                     <div class="flex justify-center space-x-4">
-                        <a href="{% url 'play_song:play_song' id_konten=id_konten %}" class="border-2 border-bluebright text-bluebright rounded-xl py-2 px-6 hover:bg-bluebright hover:text-black duration-200">
+                        <a href="{% url 'play_song:play_song' id_konten=id_konten %}" class="border-2 border-bluebright text-bluebright rounded-xl py-2 px-6 hover:bg-bluebright hover:text-black duration-200 mt-6 mr-6">
                             Kembali
                         </a>
-                        <button type="submit" class="border-2 border-bluebright text-bluebright rounded-xl py-2 px-6 hover:bg-bluebright hover:text-black duration-200">
+                        <button type="submit" class="border-2 border-bluebright text-bluebright rounded-xl py-2 px-6 hover:bg-bluebright hover:text-black duration-200 mt-6 mr-6">
                             Tambah
                         </button>
                     </div>
