@@ -4,10 +4,11 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from datetime import date
 from django.http import HttpResponseRedirect
+from django.db.backends.utils import CursorWrapper
 from utils.query import connectdb
 
 @connectdb
-def user_playlist(cursor, request):
+def user_playlist(cursor: CursorWrapper, request):
     email_pembuat = request.session.get('email')
 
     cursor.execute("""
@@ -27,7 +28,7 @@ def user_playlist(cursor, request):
     return render(request, "user_playlist.html", {'playlists': playlist_data})
 
 @connectdb
-def tambah_playlist(cursor, request):
+def tambah_playlist(cursor: CursorWrapper, request):
     if request.method == 'POST':
         judul = request.POST.get('judul')
         deskripsi = request.POST.get('deskripsi')
@@ -48,7 +49,7 @@ def tambah_playlist(cursor, request):
     return render(request, 'tambah_playlist.html')
 
 @connectdb
-def ubah_playlist(cursor, request, id_user_playlist):
+def ubah_playlist(cursor: CursorWrapper, request, id_user_playlist):
     if request.method == 'POST':
         judul = request.POST.get('judul')
         deskripsi = request.POST.get('deskripsi')
@@ -71,7 +72,7 @@ def ubah_playlist(cursor, request, id_user_playlist):
     return render(request, 'ubah_playlist.html', {'playlist': {'id': id_user_playlist, 'judul': playlist[0], 'deskripsi': playlist[1]}})
 
 @connectdb
-def hapus_playlist(cursor, request, id_user_playlist):
+def hapus_playlist(cursor: CursorWrapper, id_user_playlist):
     cursor.execute("""
         DELETE FROM USER_PLAYLIST
         WHERE id_user_playlist = %s;
@@ -80,7 +81,7 @@ def hapus_playlist(cursor, request, id_user_playlist):
     return HttpResponseRedirect(reverse('user_playlist:user_playlist'))
 
 @connectdb
-def detail_playlist(cursor, request, id_user_playlist):
+def detail_playlist(cursor: CursorWrapper, request, id_user_playlist):
     cursor.execute("""
         SELECT UP.judul, UP.deskripsi, UP.jumlah_lagu, UP.total_durasi, UP.tanggal_dibuat, A.nama as pembuat
         FROM USER_PLAYLIST UP
@@ -120,7 +121,7 @@ def detail_playlist(cursor, request, id_user_playlist):
     })
 
 @connectdb
-def tambah_lagu_playlist(cursor, request, id_user_playlist):
+def tambah_lagu_playlist(cursor: CursorWrapper, request, id_user_playlist):
     if request.method == 'POST':
         id_song = request.POST.get('id_song')
 
@@ -154,7 +155,7 @@ def tambah_lagu_playlist(cursor, request, id_user_playlist):
     })
 
 @connectdb
-def hapus_lagu_playlist(cursor, request, id_user_playlist, id_song):
+def hapus_lagu_playlist(cursor: CursorWrapper, request, id_user_playlist, id_song):
     cursor.execute("""
         DELETE FROM PLAYLIST_SONG
         WHERE id_playlist = (

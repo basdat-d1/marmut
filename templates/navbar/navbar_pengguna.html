@@ -13,13 +13,13 @@
             <a href="/lihat_chart" class="hover:bg-blue-700 px-3 py-2 rounded">Chart</a>
             <a href="{% url 'user_playlist:user_playlist' %}" class="hover:bg-blue-700 px-3 py-2 rounded">Playlist</a>
             <a href="/langganan_paket" class="hover:bg-blue-700 px-3 py-2 rounded">Subscription</a>    
-            {% if status_langganan == 'Premium' %}
+            {% if request.session.is_premium %}
                 <a href="/kelola_downloaded_songs" class="hover:bg-blue-700 px-3 py-2 rounded">Downloaded Songs</a>
             {% endif %}
-            {% if isPodcaster %}
+            {% if request.session.is_podcaster %}
                 <a href="/kelola_podcast" class="hover:bg-blue-700 px-3 py-2 rounded">Podcast</a>
             {% endif %}
-            {% if isArtist or isSongwriter %}
+            {% if request.session.is_artist or request.session.is_songwriter %}
                 <a href="/kelola_album_songs" class="hover:bg-blue-700 px-3 py-2 rounded">Album & Songs</a>
                 <a href="/cek_royalti" class="hover:bg-blue-700 px-3 py-2 rounded">Cek Royalti</a>
             {% endif %}

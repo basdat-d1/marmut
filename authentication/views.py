@@ -72,15 +72,11 @@ def register_pengguna(cursor: CursorWrapper, request):
                 cursor.execute("INSERT INTO PODCASTER(email) VALUES (%s)", [email])
             elif role == "Artist":
                 id_artist = str(uuid.uuid4())
-                cursor.execute('SELECT id FROM PEMILIK_HAK_CIPTA')
-                ids = cursor.fetchall()
                 id_pemilik_hak_cipta = str(uuid.uuid4())
                 cursor.execute("INSERT INTO ARTIST(id, email_akun, id_pemilik_hak_cipta) VALUES (%s, %s, %s)",
                                 (id_artist, email, id_pemilik_hak_cipta))
             elif role == "Songwriter":
                 id_songwriter = str(uuid.uuid4())
-                cursor.execute('SELECT id FROM PEMILIK_HAK_CIPTA')
-                ids = cursor.fetchall()
                 id_pemilik_hak_cipta = str(uuid.uuid4())
                 cursor.execute("INSERT INTO SONGWRITER(id, email_akun, id_pemilik_hak_cipta) VALUES (%s, %s, %s)",
                                 (id_songwriter, email, id_pemilik_hak_cipta))
@@ -173,36 +169,42 @@ def login(cursor: CursorWrapper, request):
 
 def handle_pengguna_login(cursor: CursorWrapper, request, user):
     email = user[0]
-    is_artist, is_songwriter, is_podcaster = False, False, False
-    status_langganan = "Non-Premium"
+    is_artist, is_songwriter, is_podcaster, is_premium = False, False, False, False
 
     records_song_artist, records_song_songwriter, records_podcast = [], [], []
 
     # Fetch data pengguna
     id_artist, id_songwriter, id_pemilik_hak_cipta_artist, id_pemilik_hak_cipta_songwriter = fetch_user_data(cursor, email, records_song_artist, records_song_songwriter, records_podcast)
 
+    # Cek apakah user podcaster
+    cursor.execute("SELECT * FROM PODCASTER WHERE email = %s", [email])
+    podcaster = cursor.fetchone()
+    if podcaster:
+        print("podcaster")
+        is_podcaster = True
+
     # Cek apakah user artist
     cursor.execute("SELECT * FROM ARTIST WHERE email_akun = %s", [email])
     artist = cursor.fetchone()
     if artist:
+        print("artist")
         is_artist = True
+
     # Cek apakah user songwriter
     cursor.execute("SELECT * FROM SONGWRITER WHERE email_akun = %s", [email])
     songwriter = cursor.fetchone()
     if songwriter:
+        print("songwriter")
         is_songwriter = True
-    # Cek apakah user artist
-    cursor.execute("SELECT * FROM PODCASTER WHERE email = %s", [email])
-    podcaster = cursor.fetchone()
-    if podcaster:
-        is_podcaster = True
+
     # Cek apakah user premium
-    if is_premium(cursor, email):
-        status_langganan = "Premium"
+    if check_premium(cursor, email):
+        print("premium")
+        is_premium = True
 
     request.session["email"] = email
     request.session["role"] = 'pengguna'
-    request.session["status_langganan"] = status_langganan
+    request.session["is_premium"] = is_premium
     request.session["is_artist"] = is_artist
     request.session["is_songwriter"] = is_songwriter
     request.session["is_podcaster"] = is_podcaster
@@ -283,7 +285,7 @@ def fetch_user_playlist(cursor: CursorWrapper, email):
     cursor.execute("SELECT * FROM USER_PLAYLIST WHERE email_pembuat = %s", [email])
     return cursor.fetchall()
 
-def is_premium(cursor: CursorWrapper, email):
+def check_premium(cursor: CursorWrapper, email):
     cursor.execute("SELECT * FROM PREMIUM WHERE email = %s", [email])
     return bool(cursor.fetchone())
 
