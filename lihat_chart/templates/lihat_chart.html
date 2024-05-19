@@ -6,7 +6,7 @@
 {% endblock meta %}
 
 {% block content %}
-{% include "navbar/pengguna/navbar_pengguna_biasa.html" %}
+{% include "navbar/navbar_pengguna.html" %}
 <div class="bg-gradient-to-bl from-indigo-500/20 min-h-screen">
     <div class="container mx-auto p-8 mt-16">
         <div class="container mx-auto p-8 flex justify-center items-center flex-col"> 
@@ -22,12 +22,12 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for chart in chart %}
+                        {% for chart in charts %}
                         <tr>
-                            <td class="border border-graybright px-4 py-2 text-white text-xl">{{ chart.title }}</td>
+                            <td class="border border-graybright px-4 py-2 text-white text-xl">{{ chart }}</td>
                             <td class="border border-graybright px-4 py-2 text-center">
                                 <button class="border-2 border-blue bg-blue text-white rounded-xl py-2 px-4 hover:bg-darkblue duration-200">
-                                    <a href="{% url 'lihat_chart:isi_chart' %}?playlist_type={{ chart.title }}" class="text-white">See Details</a>
+                                    <a href="{% url 'lihat_chart:isi_chart' %}?playlist_type={{ chart }}" class="text-white">See Details</a>
                                 </button>                        
                             </td>
                         </tr>
@@ -37,7 +37,9 @@
             </div>
         </div>
         <div class="flex justify-center mt-8">
-            <button onclick="window.history.back()" class="border-2 border-blue text-blue rounded-xl py-2 px-4 hover:bg-blue hover:text-black duration-200 text-2xl">Back</button>
+            <button class="border-2 border-blue text-blue rounded-xl py-2 px-4 hover:bg-blue hover:text-black duration-200 text-2xl">
+                <a href="{% url 'dashboard:dashboard_pengguna' %}">Back</a>
+            </button>
         </div>
     </div>
 </div>

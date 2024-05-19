@@ -1,8 +1,11 @@
 from django.urls import path
-from . import views
+from .views import langganan_paket, pembayaran_paket, riwayat_transaksi
+from django.contrib.auth import views as auth_views
+
+app_name = 'langganan_paket'
 
 urlpatterns = [
-    path('', views.langganan_paket, name='langganan_paket'),
-    path('pembayaran_paket/', views.pembayaran_paket, name='pembayaran_paket'),
-    path('riwayat_transaksi/', views.riwayat_transaksi, name='riwayat_transaksi'),
+    path('', langganan_paket, name='langganan_paket'),
+    path('pembayaran_paket/', pembayaran_paket, name='pembayaran_paket'),
+    path('riwayat_transaksi/', riwayat_transaksi, name='riwayat_transaksi'),
 ]

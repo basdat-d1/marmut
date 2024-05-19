@@ -1,0 +1,46 @@
+-- 1
+CREATE OR REPLACE FUNCTION check_email_exists()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM AKUN WHERE email = NEW.email) THEN
+        RAISE EXCEPTION 'Email sudah pernah didaftarkan.';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER check_email_exists
+BEFORE INSERT ON AKUN
+FOR EACH ROW
+EXECUTE FUNCTION check_email_exists();
+
+-- 2
+CREATE OR REPLACE FUNCTION set_non_premium()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO NONPREMIUM(email) VALUES (NEW.email);
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER set_non_premium
+AFTER INSERT ON AKUN
+FOR EACH ROW
+EXECUTE FUNCTION set_non_premium();
+
+-- 3
+CREATE OR REPLACE FUNCTION check_premium_status()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.timestamp_berakhir < CURRENT_TIMESTAMP THEN
+        DELETE FROM PREMIUM WHERE email = NEW.email;
+        INSERT INTO NONPREMIUM(email) VALUES (NEW.email);
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER check_premium_status
+BEFORE UPDATE ON TRANSACTION
+FOR EACH ROW
+EXECUTE FUNCTION check_premium_status();

@@ -2,37 +2,66 @@
 {% load static %}
 
 {% block meta %}
-<title>Search Results</title>
+<title>Search Bar</title>
 {% endblock meta %}
 
 {% block content %}
-<!-- Navbar -->
-{% include "navbar/pengguna/navbar_pengguna_biasa.html" %}
-
-<!-- Main Content -->
-<header class="bg-primary-500 py-4 mt-20">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <h1 class="text-2xl font-semibold text-white">SEARCH RESULTS</h1>
+{% include "navbar/navbar_pengguna.html" %} 
+<header class="bg-primary-500 text-white py-4">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h1 class="text-2xl font-semibold mt-20 text-center">SEARCH BAR</h1>
     </div>
 </header>
 
-<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center">
-    <div class="mb-8 w-1/2 mx-auto">
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="mb-8">
         <form action="" method="GET">
-            <div class="flex items-center justify-center">
+            <div class="flex items-center">
                 <label for="query" class="mr-4 text-white">Query:</label>
-                <input type="text" id="query" name="query" class="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:border-blue-500 flex-grow">
-                <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-md ml-4 hover:bg-blue-600 focus:outline-none focus:ring focus:border-blue-500">CARI</button>
+                <input type="text" id="query" name="query" class="px-4 py-2 text-black border border-gray-300 rounded-md focus:outline-none focus:ring focus:border-blue-500 flex-grow">
+                <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-md ml-4">CARI</button>
             </div>
         </form>
     </div>
 
-    <h2 class="text-xl font-bold mb-4 text-white">Maaf, pencarian untuk “love” tidak ditemukan</h2>
+    {% if search_results %}
+        <h2 class="text-xl font-bold mb-4 text-white">Hasil Pencarian "{{ query }}"</h2>
+        <table class="w-full border-collapse border border-gray-400 mb-8 text-white">
+            <thead>
+                <tr>
+                    <th class="border border-gray-400 px-4 py-2 bg-gray-200">Tipe</th>
+                    <th class="border border-gray-400 px-4 py-2 bg-gray-200">Judul</th>
+                    <th class="border border-gray-400 px-4 py-2 bg-gray-200">Oleh</th>
+                    <th class="border border-gray-400 px-4 py-2 bg-gray-200">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for result in search_results %}
+                    <tr>
+                        <td class="border border-gray-400 px-4 py-2">{{ result.1 }}</td>
+                        <td class="border border-gray-400 px-4 py-2">{{ result.0 }}</td>
+                        <td class="border border-gray-400 px-4 py-2">{{ result.2 }}</td>
+                        <td class="border border-gray-400 px-4 py-2">
+                        {% if result.1 == "Podcast" %}
+                            <a href="{% url 'play_podcast:show_podcast' %}?podcast_id={{ result.3 }}"  class="bg-blue-500 text-white px-4 py-2 rounded">Lihat</a>
+                        {% elif result.1 == "Song" %}
+                            <a href="{% url 'play_song:play_song' id_konten=result.3%}"  class="bg-blue-500 text-white px-4 py-2 rounded">Lihat</a>
+                        {% elif result.1 == "User Playlist" %}
+                            <a href="{% url 'play_user_playlist:play_user_playlist' id_user_playlist=result.3 %}" class="bg-blue-500 text-white px-4 py-2 rounded">Lihat</a>
+                        {% else %}
+                            <a href="{% url 'detail_item' item_id=result.3 %}" class="bg-blue-500 text-white px-4 py-2 rounded">Lihat</a>
+                        {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        {% if query %}
+            <h2 class="text-xl font-bold mb-4 text-white">Hasil Pencarian "{{ query }}"</h2>
+            <p class="text-lg font-semibold mb-4 text-white">Maaf, pencarian untuk "{{ query }}" tidak ditemukan</p>
+        {% endif %}
+    {% endif %}
 </main>
 
-<footer class="bg-gray-800 py-4">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-gray-300">
-        <p>&copy; 2024 Marmut. All rights reserved.</p>
-    </div>
-</footer>
 {% endblock content %}
