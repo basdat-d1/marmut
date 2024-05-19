@@ -1,114 +1,168 @@
-from django.shortcuts import render
+import uuid
+from django.urls import reverse
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from datetime import date
+from django.http import HttpResponseRedirect
+from django.db.backends.utils import CursorWrapper
+from utils.query import connectdb
 
-def user_playlist(request):
-    playlists = [
-        {
-            'judul': 'Radio ground everyone',
-            'jumlah_lagu': 39,
-            'total_durasi': 6664
-        },
-        {
-            'judul': 'Health say easy',
-            'jumlah_lagu': 91,
-            'total_durasi': 4188
-        },
-        {
-            'judul': 'Rich people',
-            'jumlah_lagu': 49,
-            'total_durasi': 6682
-        },
-    ]
+@connectdb
+def user_playlist(cursor: CursorWrapper, request):
+    email_pembuat = request.session.get('email')
 
-    context = {
-        "playlists": playlists
-    }
+    cursor.execute("""
+        SELECT id_user_playlist, judul, jumlah_lagu, total_durasi
+        FROM USER_PLAYLIST
+        WHERE email_pembuat = %s;
+    """, [email_pembuat])
+    playlists = cursor.fetchall()
 
-    return render(request, 'user_playlist.html', context)
+    playlist_data = [{
+        'id': playlist[0],
+        'judul': playlist[1],
+        'jumlah_lagu': playlist[2],
+        'total_durasi': playlist[3]
+    } for playlist in playlists]
 
-def tambah_playlist(request):
+    return render(request, "user_playlist.html", {'playlists': playlist_data})
+
+@connectdb
+def tambah_playlist(cursor: CursorWrapper, request):
+    if request.method == 'POST':
+        judul = request.POST.get('judul')
+        deskripsi = request.POST.get('deskripsi')
+        email_pembuat = request.session.get('email')
+
+        id_user_playlist = str(uuid.uuid4())
+        id_playlist = str(uuid.uuid4())
+        tanggal_dibuat = date.today()
+
+        cursor.execute("INSERT INTO PLAYLIST (id) VALUES (%s)", [id_playlist])
+        cursor.execute("""
+            INSERT INTO USER_PLAYLIST (email_pembuat, id_user_playlist, judul, deskripsi, jumlah_lagu, tanggal_dibuat, id_playlist, total_durasi)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        """, [email_pembuat, id_user_playlist, judul, deskripsi, 0, tanggal_dibuat, id_playlist, 0])
+
+        return HttpResponseRedirect(reverse('user_playlist:user_playlist'))
+
     return render(request, 'tambah_playlist.html')
 
-def ubah_playlist(request):
-    return render(request, 'ubah_playlist.html')
+@connectdb
+def ubah_playlist(cursor: CursorWrapper, request, id_user_playlist):
+    if request.method == 'POST':
+        judul = request.POST.get('judul')
+        deskripsi = request.POST.get('deskripsi')
 
-def detail_playlist(request):
-    songs = [
-        {
-            'judul': 'Travel against my city',
-            'email_pembuat': 'smithkristina@hotmail.com',
-            'durasi': 3
+        cursor.execute("""
+            UPDATE USER_PLAYLIST
+            SET judul = %s, deskripsi = %s
+            WHERE id_user_playlist = %s;
+        """, [judul, deskripsi, id_user_playlist])
+        messages.success(request, 'Playlist berhasil diubah.')
+        return HttpResponseRedirect(reverse('user_playlist:user_playlist'))
+
+    cursor.execute("""
+        SELECT judul, deskripsi
+        FROM USER_PLAYLIST
+        WHERE id_user_playlist = %s;
+    """, [id_user_playlist])
+    playlist = cursor.fetchone()
+
+    return render(request, 'ubah_playlist.html', {'playlist': {'id': id_user_playlist, 'judul': playlist[0], 'deskripsi': playlist[1]}})
+
+@connectdb
+def hapus_playlist(cursor: CursorWrapper, id_user_playlist):
+    cursor.execute("""
+        DELETE FROM USER_PLAYLIST
+        WHERE id_user_playlist = %s;
+    """, [id_user_playlist])
+
+    return HttpResponseRedirect(reverse('user_playlist:user_playlist'))
+
+@connectdb
+def detail_playlist(cursor: CursorWrapper, request, id_user_playlist):
+    cursor.execute("""
+        SELECT UP.judul, UP.deskripsi, UP.jumlah_lagu, UP.total_durasi, UP.tanggal_dibuat, A.nama as pembuat
+        FROM USER_PLAYLIST UP
+        JOIN AKUN A ON UP.email_pembuat = A.email
+        WHERE UP.id_user_playlist = %s;
+    """, [id_user_playlist])
+    playlist = cursor.fetchone()
+
+    cursor.execute("""
+        SELECT K.id, K.judul, AK.nama, K.durasi
+        FROM PLAYLIST_SONG PS
+        JOIN KONTEN K ON PS.id_song = K.id
+        JOIN SONG S ON K.id = S.id_konten
+        JOIN ARTIST AR ON S.id_artist = AR.id
+        JOIN AKUN AK ON AR.email_akun = AK.email
+        JOIN USER_PLAYLIST UP ON PS.id_playlist = UP.id_playlist
+        WHERE UP.id_user_playlist = %s;
+    """, [id_user_playlist])
+    songs = cursor.fetchall()
+
+    return render(request, 'detail_playlist.html', {
+        'playlist': {
+            'judul': playlist[0],
+            'deskripsi': playlist[1],
+            'jumlah_lagu': playlist[2],
+            'total_durasi': playlist[3],
+            'tanggal_dibuat': playlist[4],
+            'pembuat': playlist[5]
         },
-        {
-            'judul': 'Their thought discover',
-            'email_pembuat': 'hilalfauzan9@gmail.com',
-            'durasi': 4
-        },
-    ]
+        'songs': [{
+            'id': song[0],
+            'judul': song[1],
+            'nama': song[2],
+            'durasi': song[3]
+        } for song in songs],
+        'id_user_playlist': id_user_playlist
+    })
 
-    context = {
-        "songs": songs
-    }
+@connectdb
+def tambah_lagu_playlist(cursor: CursorWrapper, request, id_user_playlist):
+    if request.method == 'POST':
+        id_song = request.POST.get('id_song')
 
-    return render(request, 'detail_playlist.html', context)
+        cursor.execute("""
+            SELECT id_playlist
+            FROM USER_PLAYLIST
+            WHERE id_user_playlist = %s
+        """, [id_user_playlist])
+        id_playlist = cursor.fetchone()[0]
 
-def tambah_lagu(request):
-    songs_artists = [
-        ("Pretty mother reduce table", "Lauren Harrison"),
-        ("Available long suggest least", "John Brooks"),
-        ("For young sound concern", "Paul Scott"),
-        ("Travel against my city", "Tanya Ford"),
-        ("Trial PM", "Cristian Jackson"),
-        ("Country lay shake sort", "Cynthia Jordan"),
-        ("Cause yourself", "Kimberly Rodriguez"),
-        ("Cost might five air", "Kaitlyn Curry"),
-        ("Radio front number", "Cristian Jackson"),
-        ("Open population", "Lauren Harrison"),
-        ("Over trade four", "Adam Howell"),
-        ("Raise right institution", "Kimberly Rodriguez"),
-        ("Oil water organization service", "Paul Scott"),
-        ("Activity report consumer business", "Kaitlyn Curry"),
-        ("Ball or task early would", "Paul Scott"),
-        ("Mouth under local", "Cristian Jackson"),
-        ("Decision how pattern money forget", "Jessica Meyer"),
-        ("History film east though until", "Kaitlyn Curry"),
-        ("College offer expert", "Kimberly Rodriguez"),
-        ("Others own serious affect", "Cristian Jackson"),
-        ("Near source cup member", "Jessica Meyer"),
-        ("Foot north", "Kaitlyn Curry"),
-        ("Various Republican process method", "Cristian Jackson"),
-        ("Race we TV difference", "Cynthia Jordan"),
-        ("Reduce raise garden", "Cristian Jackson"),
-        ("Walk campaign company agent day", "John Brooks"),
-        ("Many speech feel wish", "Cristian Jackson"),
-        ("Bring performance sound why", "Jessica Meyer"),
-        ("Enough campaign drive", "John Brooks"),
-        ("Prepare choice address none", "Tanya Ford"),
-        ("Board majority attorney", "John Brooks"),
-        ("Site general indicate this", "Cristian Jackson"),
-        ("Less teach everyone war training", "Paul Scott"),
-        ("Me magazine organization result", "Lauren Harrison"),
-        ("Kind thing will head", "Adam Howell"),
-        ("Keep according short beat", "Cristian Jackson"),
-        ("Guess conference detail", "Jessica Meyer"),
-        ("Positive she", "Cristian Jackson"),
-        ("Remain good suddenly party", "Kimberly Rodriguez"),
-        ("Discover but million nice up", "Tanya Ford"),
-        ("Tonight dream these another", "Cristian Jackson"),
-        ("Begin could western customer", "Paul Scott"),
-        ("Single know that you", "Adam Howell"),
-        ("Simple stand still lay", "Cristian Jackson"),
-        ("Table half level actually", "Paul Scott"),
-        ("Your quickly result military board", "Paul Scott"),
-        ("Financial many evidence lawyer", "Kaitlyn Curry"),
-        ("Generation her eat quite share", "Tanya Ford"),
-        ("Trade tax", "Tanya Ford"),
-        ("Game hard agent", "Adam Howell")
-    ]
+        cursor.execute("""
+            INSERT INTO PLAYLIST_SONG (id_playlist, id_song)
+            VALUES (%s, %s)
+        """, [id_playlist, id_song])
 
-    all_songs = [{'id': str(i+1), 'title': title, 'artist': artist} for i, (title, artist) in enumerate(songs_artists)]
-    
-    context = {
-        'all_songs': all_songs
-    }
+        return redirect('user_playlist:detail_playlist', id_user_playlist=id_user_playlist)
 
-    return render(request, 'tambah_lagu.html', context)
+    cursor.execute("""
+        SELECT K.id, K.judul, AK.nama AS nama_artis
+        FROM KONTEN K
+        JOIN SONG S ON K.id = S.id_konten
+        JOIN ARTIST AR ON S.id_artist = AR.id
+        JOIN AKUN AK ON AR.email_akun = AK.email
+    """)
+    songs = cursor.fetchall()
+
+    song_choices = [(str(song[0]), f"{song[1]} - {song[2]}") for song in songs]
+    return render(request, 'tambah_lagu.html', {
+        'id_user_playlist': id_user_playlist,
+        'song_choices': song_choices
+    })
+
+@connectdb
+def hapus_lagu_playlist(cursor: CursorWrapper, request, id_user_playlist, id_song):
+    cursor.execute("""
+        DELETE FROM PLAYLIST_SONG
+        WHERE id_playlist = (
+            SELECT id_playlist
+            FROM USER_PLAYLIST
+            WHERE id_user_playlist = %s
+        ) AND id_song = %s;
+    """, [id_user_playlist, id_song])
+
+    return HttpResponseRedirect(reverse('user_playlist:detail_playlist', args=[id_user_playlist]))

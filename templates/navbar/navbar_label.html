@@ -9,10 +9,10 @@
             </div>
         </div>
         <div class="flex gap-5 items-center">
-            <a href="/dashboard/label/" class="hover:bg-blue-700 px-3 py-2 rounded">Dashboard</a>
-            <a href="/daftar-album-song/list-album/label/" class="hover:bg-blue-700 px-3 py-2 rounded">Album & Songs</a>
-            <a href="/cek-royalti/label/" class="hover:bg-blue-700 px-3 py-2 rounded">Royalty</a>
-            <a href="/">
+            <a href="{% url 'dashboard:dashboard_label' %}" class="hover:bg-blue-700 px-3 py-2 rounded">Dashboard</a>
+            <a href="/daftar_album_song" class="hover:bg-blue-700 px-3 py-2 rounded">Album</a>
+            <a href="/cek_royalti" class="hover:bg-blue-700 px-3 py-2 rounded">Royalty</a>
+            <a href="{% url 'authentication:authentication' %}">
                 <button class="border-2 border-blue text-blue rounded-xl py-2 px-4 hover:bg-blue hover:text-black duration-200">Logout</button>
             </a>
         </div>

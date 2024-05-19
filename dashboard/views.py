@@ -6,7 +6,6 @@ from django.db.backends.utils import CursorWrapper
 
 @connectdb
 def dashboard_pengguna(cursor: CursorWrapper, request):
-    print("masuk dashboard_pengguna")
     try:
         email = request.session.get('email')
     except:
@@ -56,14 +55,14 @@ def dashboard_pengguna(cursor: CursorWrapper, request):
     cursor.execute(query)
     playlists = cursor.fetchall()
 
-    is_artist = request.session.get('is_artist', False)
-    is_songwriter = request.session.get('is_songwriter', False)
-    is_podcaster = request.session.get('is_podcaster', False)
-    status_langganan = request.session.get('status_langganan', 'Non-Premium')
-    print( "artist " + str(is_artist))
-    print( "songwriter " + str(is_songwriter))
-    print( "podcaster " + str(is_podcaster))
-    print( "status langganan " + str(status_langganan))
+    is_artist = request.session.get('is_artist')
+    is_songwriter = request.session.get('is_songwriter')
+    is_podcaster = request.session.get('is_podcaster')
+    status_langganan = request.session.get('status_langganan')
+    print("artist " + str(is_artist))
+    print("songwriter " + str(is_songwriter))
+    print("podcaster " + str(is_podcaster))
+    print("status langganan " + str(status_langganan))
 
     records_song_artist, records_song_songwriter, records_podcast = [], [], []
 

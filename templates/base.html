@@ -23,7 +23,7 @@
                     transparent: "transparent",
                     current: "currentColor",
                     black: "#102029",
-                    blackdove: "3C4048",
+                    blackdove: "#3C4048",
                     white: "#FFFFFF",
                     green: "#85C88A",
                     red: "#BD4B4B",
@@ -56,6 +56,18 @@
     <style>
         body {
             background-color: #102029;
+            color: white;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+        .content-wrapper {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .content {
+            flex: 1;
         }
     </style>
 
@@ -66,8 +78,10 @@
 
 <!-- CHILD COMPONENT -->
 <body>
-    <div class="font-poppins">
-        {% block content %}{% endblock %}
+    <div class="font-poppins content-wrapper">
+        <div class="content">
+            {% block content %}{% endblock %}
+        </div>
     </div>
 </body>
 </html>

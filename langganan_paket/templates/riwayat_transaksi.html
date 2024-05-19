@@ -6,17 +6,16 @@
 {% endblock meta %}
 
 {% block content %}
-<!-- Navbar -->
-{% include "navbar/pengguna/navbar_pengguna_biasa.html" %}
-<hr class="border-b border-gray-400 mb-4 mt-20"> <!-- Garis di akhir navbar -->
+{% include "navbar/navbar_pengguna.html" %}
+<div class="bg-gradient-to-bl from-indigo-500/20 pt-28 min-h-screen">
 
-<div class="container mx-auto px-4 mt-16"> <!-- Container untuk konten -->
-    <h1 class="text-3xl font-bold my-4 text-white text-center">Riwayat Transaksi Paket</h1> <!-- Judul halaman -->
-    <div class="overflow-x-auto"> <!-- Membuat konten bisa di-scroll horizontal -->
-        <table class="w-full table-auto border-collapse border border-gray-400 bg-white shadow-md rounded-lg"> <!-- Tabel dengan shadow dan border-radius -->
-            <thead class="bg-blue-500 text-white"> <!-- Warna latar belakang header -->
+<div class="container mx-auto px-4 mt-4">
+    <h1 class="text-3xl font-bold my-4 text-white text-center">Riwayat Transaksi Paket</h1>
+    <div class="overflow-x-auto">
+        <table class="w-full table-auto border-collapse border border-gray-400 bg-white shadow-md rounded-lg">
+            <thead class="bg-blue-500 text-black">
                 <tr>
-                    <th class="px-4 py-2 text-center text-black">Jenis</th> <!-- Teks hitam -->
+                    <th class="px-4 py-2 text-center text-black">Jenis</th>
                     <th class="px-4 py-2 text-center text-black">Tanggal Dimulai</th>
                     <th class="px-4 py-2 text-center text-black">Tanggal Berakhir</th>
                     <th class="px-4 py-2 text-center text-black">Metode Pembayaran</th>
@@ -24,34 +23,21 @@
                 </tr>
             </thead>
             <tbody>
+                {% for transaksi in riwayat_transaksi %}
                 <tr>
-                    <td class="border px-4 py-2 text-center font-semibold" id="jenis"></td> <!-- Teks center dan padding -->
-                    <td class="border px-4 py-2 text-center" id="tanggal_dimulai"></td>
-                    <td class="border px-4 py-2 text-center" id="tanggal_berakhir"></td>
-                    <td class="border px-4 py-2 text-center" id="metode_pembayaran"></td>
-                    <td class="border px-4 py-2 text-center" id="nominal"></td>
+                    <td class="border px-4 py-2 text-center font-semibold text-black">{{ transaksi.1 }}</td> 
+                    <td class="border px-4 py-2 text-center text-black">{{ transaksi.2 }}</td> 
+                    <td class="border px-4 py-2 text-center text-black">{{ transaksi.3 }}</td> 
+                    <td class="border px-4 py-2 text-center text-black">{{ transaksi.4 }}</td> 
+                    <td class="border px-4 py-2 text-center text-black">{{ transaksi.5 }}</td>                 
                 </tr>
+                {% endfor %}
             </tbody>
         </table>
     </div>
-    <div class="text-center mt-4"> <!-- Membuat tombol kembali menjadi tengah -->
-        <a href="#" class="bg-blue-500 text-white px-6 py-3 rounded inline-block" style="background-color: #3B82F6;">Kembali</a> <!-- Tombol kembali dengan padding dan warna -->
+    <div class="text-center mt-4">
+        <a href="{% url 'langganan_paket:langganan_paket' %}" class="bg-blue-500 text-white px-6 py-3 rounded inline-block" style="background-color: #3B82F6;">Kembali</a> <!-- Tombol kembali dengan padding dan warna -->
     </div>
 </div>
-
-<script>
-    // Mengambil nilai parameter dari URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const jenis = urlParams.get('jenis');
-    const harga = urlParams.get('harga');
-    const metode_pembayaran = urlParams.get('metode_pembayaran');
-
-    // Menampilkan nilai parameter pada halaman
-    document.getElementById('jenis').innerText = jenis;
-    document.getElementById('tanggal_dimulai').innerText = new Date().toLocaleString('en-US', { month: 'long', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric', hour12: true });
-    document.getElementById('tanggal_berakhir').innerText = new Date(new Date().getTime() + 30 * 24 * 60 * 60 * 1000).toLocaleString('en-US', { month: 'long', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric', hour12: true });
-    document.getElementById('metode_pembayaran').innerText = metode_pembayaran;
-    document.getElementById('nominal').innerText = `Rp${harga}`;
-</script>
 
 {% endblock content %}

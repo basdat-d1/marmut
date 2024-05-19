@@ -2,11 +2,11 @@
 {% load static %}
 
 {% block meta %}
-<title>Dashboard Pengguna Biasa</title>
+<title>Playlist Pengguna</title>
 {% endblock meta %}
 
 {% block content %}
-{% include "navbar/pengguna/navbar_pengguna_biasa.html" %}
+{% include "navbar/navbar_pengguna.html" %}
 <div class="bg-gradient-to-bl from-indigo-500/20 pt-28 h-screen">
     <div class="flex justify-center items-center h-full">
         <div class="text-center">
@@ -24,9 +24,9 @@
                         <div class="text-lg text-center">{{ playlist.jumlah_lagu }}</div>
                         <div class="text-lg text-center">{{ playlist.total_durasi }} menit</div>
                         <div class="flex space-x-2 justify-center">
-                            <a href="detail/" class="border-2 border-bluebright text-bluebright rounded-xl py-2 px-6 hover:bg-bluebright hover:text-black duration-200">Detail</a>
-                            <a href="ubah/" class="border-2 border-bluebright text-bluebright rounded-xl py-2 px-6 hover:bg-bluebright hover:text-black duration-200">Ubah</a>
-                            <a href="hapus/" class="border-2 border-bluebright text-bluebright rounded-xl py-2 px-6 hover:bg-bluebright hover:text-black duration-200">Hapus</a>
+                            <a href="{% url 'user_playlist:detail_playlist' playlist.id %}" class="border-2 border-bluebright text-bluebright rounded-xl py-2 px-6 hover:bg-bluebright hover:text-black duration-200">Detail</a>
+                            <a href="{% url 'user_playlist:ubah_playlist' playlist.id %}" class="border-2 border-bluebright text-bluebright rounded-xl py-2 px-6 hover:bg-bluebright hover:text-black duration-200">Ubah</a>
+                            <a href="{% url 'user_playlist:hapus_playlist' playlist.id %}" class="border-2 border-bluebright text-bluebright rounded-xl py-2 px-6 hover:bg-bluebright hover:text-black duration-200">Hapus</a>
                         </div>
                         {% endfor %}
                     </div>
@@ -38,7 +38,7 @@
                 </div>
             </div>
             <div class="flex justify-center mt-10">
-                <a href="tambah/" class="border-2 border-bluebright text-bluebright rounded-xl py-2 px-6 hover:bg-bluebright hover:text-black duration-200">Tambah Playlist</a>
+                <a href="{% url 'user_playlist:tambah_playlist' %}" class="border-2 border-bluebright text-bluebright rounded-xl py-2 px-6 hover:bg-bluebright hover:text-black duration-200">Tambah Playlist</a>
             </div>
         </div>
     </div>
