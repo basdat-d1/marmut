@@ -1,9 +1,10 @@
 import datetime
 import uuid
-from django.http import HttpResponseBadRequest
+from django.http import HttpResponseBadRequest, HttpResponse
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.utils import timezone
+from django.db import connection
 
 def langganan_paket(request):
     # Buat user_id unik jika belum ada dalam sesi
@@ -17,19 +18,17 @@ def pembayaran_paket(request):
         jenis_paket = request.POST.get('jenis')
         harga = request.POST.get('harga')
         metode_pembayaran = request.POST.get('metode_pembayaran')
-        user_id = request.session.get('user_id')  # Mendapatkan user_id dari session
-
-        # Debugging: Cetak nilai yang diterima dari form
-        print("Jenis Paket:", jenis_paket)
-        print("Harga:", harga)
-        print("Metode Pembayaran:", metode_pembayaran)
-        print("User ID:", user_id)
+        
+        # Mendapatkan email pengguna
+        user_email = request.session.get('email')
+        if not user_email:
+            return HttpResponseBadRequest("Email is required")
 
         if not jenis_paket or not harga or not metode_pembayaran:
             return HttpResponseBadRequest("Missing parameters")
 
         # Mengambil tanggal sekarang
-        tanggal_sekarang = timezone.now().date()
+        tanggal_sekarang = timezone.now()
 
         # Menghitung tanggal berakhir langganan berdasarkan jenis paket yang dipilih
         if jenis_paket == '1_bulan':
@@ -41,46 +40,63 @@ def pembayaran_paket(request):
         elif jenis_paket == '1_tahun':
             tanggal_berakhir = tanggal_sekarang + datetime.timedelta(days=365)
         else:
-            return HttpResponseBadRequest("Jenis paket tidak valid")
+            return HttpResponseBadRequest("Invalid package type")
 
-        # Simpan informasi transaksi dalam session
-        transaksi = {
-            'jenis': jenis_paket,
-            'tanggal_dimulai': tanggal_sekarang.strftime("%Y-%m-%d"),
-            'tanggal_berakhir': tanggal_berakhir.strftime("%Y-%m-%d"),
-            'metode_pembayaran': metode_pembayaran,
-            'nominal': harga,
-            'user_id': user_id
-        }
-        
-        # Cek apakah sudah ada riwayat transaksi dalam session
-        if 'riwayat_transaksi' not in request.session:
-            request.session['riwayat_transaksi'] = []
-        
-        # Tambahkan informasi transaksi ke dalam riwayat transaksi dalam session
-        request.session['riwayat_transaksi'].append(transaksi)
-        request.session.modified = True
-        
-        # Ubah status langganan pengguna menjadi "Premium"
-        request.session["is_premium"] = True
-        
-        # Tampilkan pesan sukses
-        messages.success(request, 'Pembayaran berhasil! Akun Anda sekarang telah menjadi Premium.')
-        
-        # Redirect ke halaman riwayat transaksi
+        try:
+            with connection.cursor() as cursor:
+                # Insert paket jika belum ada
+                cursor.execute("""
+                    INSERT INTO PAKET (jenis, harga) 
+                    VALUES (%s, %s) 
+                    ON CONFLICT (jenis) DO NOTHING
+                """, [jenis_paket, harga])
+
+                # Insert transaksi
+                transaksi_id = uuid.uuid4()
+                cursor.execute("""
+                    INSERT INTO TRANSACTION (id, jenis_paket, email, timestamp_dimulai, timestamp_berakhir, metode_bayar, nominal) 
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                """, [
+                    transaksi_id, jenis_paket, user_email, 
+                    tanggal_sekarang, tanggal_berakhir, 
+                    metode_pembayaran, harga
+                ])
+
+                # Ubah status langganan pengguna menjadi "Premium" (masukkan ke tabel PREMIUM)
+                cursor.execute("""
+                    INSERT INTO PREMIUM (email) 
+                    VALUES (%s) 
+                    ON CONFLICT (email) DO NOTHING
+                """, [user_email])
+
+                # Set session is_premium menjadi True
+                request.session['is_premium'] = True
+
+            # Tampilkan pesan sukses
+            messages.success(request, 'Pembayaran berhasil! Akun Anda sekarang telah menjadi Premium.')
+
+        except Exception as e:
+            print("Error saving transaction:", e)
+            messages.error(request, 'Terjadi kesalahan dalam proses pembayaran.')
+
+        # Redirect ke halaman riwayat transaksi dengan namespace 'langganan_paket'
         return redirect('langganan_paket:riwayat_transaksi')
     else:
         # Jika bukan metode POST, kembalikan halaman pembayaran
         return render(request, 'pembayaran_paket.html')
 
 def riwayat_transaksi(request):
-    user_id = request.session.get('user_id')  # Mendapatkan user_id dari session
-    riwayat_transaksi = request.session.get('riwayat_transaksi', [])
-    
-    # Filter transaksi yang hanya terkait dengan user_id
-    user_transaksi = [transaksi for transaksi in riwayat_transaksi if transaksi.get('user_id') == user_id]
+    user_email = request.session.get('email')  # Mendapatkan email pengguna dari session
 
-    # Debugging: Cetak riwayat transaksi yang diambil dari session
-    print("Riwayat Transaksi:", user_transaksi)
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT id, jenis_paket, timestamp_dimulai, timestamp_berakhir, metode_bayar, nominal 
+            FROM TRANSACTION 
+            WHERE email = %s
+        """, [user_email])
+        transaksi_list = cursor.fetchall()
 
-    return render(request, 'riwayat_transaksi.html', {'riwayat_transaksi': user_transaksi})
+    # Debugging: Cetak riwayat transaksi yang diambil dari basis data
+    print("Riwayat Transaksi:", transaksi_list)
+
+    return render(request, 'riwayat_transaksi.html', {'riwayat_transaksi': transaksi_list})
