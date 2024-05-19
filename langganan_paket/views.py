@@ -5,13 +5,16 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.utils import timezone
 from django.db import connection
+from django.views.decorators.csrf import csrf_exempt
 
+@csrf_exempt
 def langganan_paket(request):
     # Buat user_id unik jika belum ada dalam sesi
     if 'user_id' not in request.session:
         request.session['user_id'] = str(uuid.uuid4())
     return render(request, 'langganan_paket.html')
 
+@csrf_exempt
 def pembayaran_paket(request):
     if request.method == 'POST':
         # Mendapatkan jenis paket dan harga dari parameter POST
@@ -85,6 +88,7 @@ def pembayaran_paket(request):
         # Jika bukan metode POST, kembalikan halaman pembayaran
         return render(request, 'pembayaran_paket.html')
 
+@csrf_exempt
 def riwayat_transaksi(request):
     user_email = request.session.get('email')  # Mendapatkan email pengguna dari session
 
