@@ -18,7 +18,7 @@ def dashboard_pengguna(cursor: CursorWrapper, request):
 
     cursor.execute("SELECT * FROM AKUN WHERE email = %s", [email])
     pengguna = cursor.fetchone()
-    
+
     if (request.session.get('is_podcaster')):
         query =(rf"""SELECT k.judul AS podcast_title, COUNT(e.id_episode) AS episode_count, COALESCE(SUM(e.durasi), 0) AS total_duration_minutes
                 FROM podcast AS p
@@ -99,8 +99,8 @@ def dashboard_pengguna(cursor: CursorWrapper, request):
         'records_song_artist': records_song_artist,
         'records_song_songwriter': records_song_songwriter,
         'records_podcast': records_podcast,
-
     }
+    
     return render(request, 'dashboard_pengguna.html', context)
 
 @connectdb

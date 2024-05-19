@@ -20,7 +20,7 @@
             {% if request.session.is_podcaster %}
                 <a href="{% url 'podcast:daftar_podcast' %}" class="hover:bg-blue-700 px-3 py-2 rounded">Podcast</a>
             {% endif %}
-            {% if request.session.role == 'pengguna' or request.session.is_artist or request.session.is_songwriter %}
+            {% if request.session.is_artist or request.session.is_songwriter %}
                 <a href="{% url 'daftar_album_song:list_album' %}" class="hover:bg-blue-700 px-3 py-2 rounded">Album & Songs</a>
                 <a href="{% url 'cek_royalti:cek_royalti' %}" class="hover:bg-blue-700 px-3 py-2 rounded">Royalty</a>
             {% endif %}
