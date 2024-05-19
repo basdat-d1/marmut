@@ -180,26 +180,22 @@ def handle_pengguna_login(cursor: CursorWrapper, request, user):
     cursor.execute("SELECT * FROM PODCASTER WHERE email = %s", [email])
     podcaster = cursor.fetchone()
     if podcaster:
-        print("podcaster")
         is_podcaster = True
 
     # Cek apakah user artist
     cursor.execute("SELECT * FROM ARTIST WHERE email_akun = %s", [email])
     artist = cursor.fetchone()
     if artist:
-        print("artist")
         is_artist = True
 
     # Cek apakah user songwriter
     cursor.execute("SELECT * FROM SONGWRITER WHERE email_akun = %s", [email])
     songwriter = cursor.fetchone()
     if songwriter:
-        print("songwriter")
         is_songwriter = True
 
     # Cek apakah user premium
     if check_premium(cursor, email):
-        print("premium")
         is_premium = True
 
     request.session["email"] = email

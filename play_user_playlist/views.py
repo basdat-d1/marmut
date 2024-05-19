@@ -3,6 +3,11 @@ from django.shortcuts import render, redirect
 from django.db.backends.utils import CursorWrapper
 from utils.query import connectdb
 
+def convert_duration(total_minutes):
+    hours = total_minutes // 60
+    minutes = total_minutes % 60
+    return f"{hours} jam {minutes} menit"
+
 @connectdb
 def play_user_playlist(cursor: CursorWrapper, request, id_user_playlist):
     email = request.session.get('email')
@@ -40,14 +45,14 @@ def play_user_playlist(cursor: CursorWrapper, request, id_user_playlist):
                 VALUES (%s, %s, %s)
             """, [email, song[0], timestamp])
 
-        return redirect('playlist:play_user_playlist', id_user_playlist=id_user_playlist)
+        return redirect('play_user_playlist:play_user_playlist', id_user_playlist=id_user_playlist)
 
-    return render(request, 'playUserPlaylist.html', {
+    return render(request, 'play_user_playlist.html', {
         'playlist': {
             'judul': playlist[0],
             'deskripsi': playlist[1],
             'jumlah_lagu': playlist[2],
-            'total_durasi': playlist[3],
+            'total_durasi': convert_duration(playlist[3]),
             'tanggal_dibuat': playlist[4],
             'pembuat': playlist[5],
             'email_pembuat': playlist[6]

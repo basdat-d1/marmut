@@ -54,7 +54,9 @@
             </div>
             {% endfor %}
         <div class="flex justify-center mt-4 mb-8">
-            <button onclick="window.history.back()" class="border-2 border-blue text-blue rounded-xl py-2 px-4 hover:bg-blue hover:text-white duration-200 text-xl">Back</button>
+            <button class="border-2 border-blue text-blue rounded-xl py-2 px-4 hover:bg-blue hover:text-white duration-200 text-xl">
+                <a href="{% url 'search_view' %}"> Back </a>
+            </button>
         </div>
     </div>
 </div>

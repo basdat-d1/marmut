@@ -1,18 +1,27 @@
 {% extends 'base.html' %}
+{% load static %}
+
+{% block meta %}
+<title>Berhasil Mengunduh Lagu</title>
+{% endblock meta %}
 
 {% block content %}
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="text-center mt-5 mb-4">
-                <h3>Berhasil mengunduh Lagu dengan judul '{{ song_title }}'!</h3>
-            </div>
-            <div class="text-center mb-5">
-                <!-- nanti url nya ganti ke daftar downloaded song -->
-                <a href="{% url 'user_playlist:detail_playlist' id_user_playlist %}" class="btn btn-primary">Ke Daftar Download</a>
-                <a href="{% url 'play_song:play_song' id_konten %}" class="btn btn-primary">Kembali</a>
+{% include "navbar/navbar_pengguna.html" %}
+<div class="bg-gradient-to-bl from-indigo-500/20 pt-20 pb-20 h-screen flex justify-center">
+    <div class="text-center">
+        <div class="bg-gray/20 rounded-3xl shadow-inner p-10" style="max-width: 100%;">
+            <div class="mb-10">
+                <p class="text-white">Berhasil mengunduh Lagu dengan judul '{{ song_title }}'!</p>
+                <div class="flex justify-center space-x-4 mt-6">
+                    <a href="{% url 'downloaded_songs:downloaded_songs' %}" class="border-2 border-bluebright text-bluebright rounded-xl py-2 px-6 hover:bg-bluebright hover:text-black duration-200">
+                        Ke Daftar Download
+                    </a>
+                    <a href="{% url 'play_song:play_song' id_konten=id_konten %}" class="border-2 border-bluebright text-bluebright rounded-xl py-2 px-6 hover:bg-bluebright hover:text-black duration-200">
+                        Kembali
+                    </a>
+                </div>
             </div>
         </div>
     </div>
 </div>
-{% endblock %}
+{% endblock content %}

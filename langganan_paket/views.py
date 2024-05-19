@@ -62,13 +62,13 @@ def pembayaran_paket(request):
         request.session.modified = True
         
         # Ubah status langganan pengguna menjadi "Premium"
-        request.session["status_langganan"] = "Premium"
+        request.session["is_premium"] = True
         
         # Tampilkan pesan sukses
         messages.success(request, 'Pembayaran berhasil! Akun Anda sekarang telah menjadi Premium.')
         
         # Redirect ke halaman riwayat transaksi
-        return redirect('riwayat_transaksi')
+        return redirect('langganan_paket:riwayat_transaksi')
     else:
         # Jika bukan metode POST, kembalikan halaman pembayaran
         return render(request, 'pembayaran_paket.html')

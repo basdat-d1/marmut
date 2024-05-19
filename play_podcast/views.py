@@ -16,6 +16,7 @@ def convert_duration(minutes):
 
 @connectdb
 def show_podcast(cursor: CursorWrapper, request):
+    podcastID = request.GET.get("podcast_id")
     is_podcaster = request.session.get('is_podcaster')
     is_artist = request.session.get('is_artist')
     is_songwriter = request.session.get('is_songwriter')
@@ -31,9 +32,10 @@ def show_podcast(cursor: CursorWrapper, request):
     LEFT JOIN GENRE g ON k.id = g.id_konten
     LEFT JOIN PODCASTER po ON p.email_podcaster = po.email
     LEFT JOIN AKUN a ON po.email = a.email
+    WHERE k.id = %s
     ORDER BY k.judul, e.tanggal_rilis;
     """
-    cursor.execute(query)
+    cursor.execute(query, (podcastID,))
     rows = cursor.fetchall()
 
     podcasts_dict = {}
@@ -68,5 +70,5 @@ def show_podcast(cursor: CursorWrapper, request):
         'isSongwriter': is_songwriter,
         'isPodcaster': is_podcaster,
     }
-
+    
     return render(request, 'play_podcast.html', content)
