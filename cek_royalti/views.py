@@ -6,8 +6,6 @@ from django.db.backends.utils import CursorWrapper
 from django.http import HttpResponseRedirect
 from utils.query import connectdb
 
-# Create your views here.
-
 @connectdb
 def cek_royalti(cursor: CursorWrapper, request):
     try:
