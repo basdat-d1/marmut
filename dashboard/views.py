@@ -59,10 +59,6 @@ def dashboard_pengguna(cursor: CursorWrapper, request):
     is_songwriter = request.session.get('is_songwriter')
     is_podcaster = request.session.get('is_podcaster')
     status_langganan = request.session.get('status_langganan')
-    print("artist " + str(is_artist))
-    print("songwriter " + str(is_songwriter))
-    print("podcaster " + str(is_podcaster))
-    print("status langganan " + str(status_langganan))
 
     records_song_artist, records_song_songwriter, records_podcast = [], [], []
 

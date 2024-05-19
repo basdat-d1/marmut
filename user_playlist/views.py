@@ -7,6 +7,15 @@ from django.http import HttpResponseRedirect
 from django.db.backends.utils import CursorWrapper
 from utils.query import connectdb
 
+def convert_duration(total_minutes):
+    hours = total_minutes // 60
+    minutes = total_minutes % 60
+
+    if hours >= 1:
+        return f"{hours} jam {minutes} menit"
+    else:
+        return f"{minutes} menit"
+
 @connectdb
 def user_playlist(cursor: CursorWrapper, request):
     email_pembuat = request.session.get('email')
@@ -22,7 +31,7 @@ def user_playlist(cursor: CursorWrapper, request):
         'id': playlist[0],
         'judul': playlist[1],
         'jumlah_lagu': playlist[2],
-        'total_durasi': playlist[3]
+        'total_durasi': convert_duration(playlist[3])
     } for playlist in playlists]
 
     return render(request, "user_playlist.html", {'playlists': playlist_data})
@@ -107,7 +116,7 @@ def detail_playlist(cursor: CursorWrapper, request, id_user_playlist):
             'judul': playlist[0],
             'deskripsi': playlist[1],
             'jumlah_lagu': playlist[2],
-            'total_durasi': playlist[3],
+            'total_durasi': convert_duration(playlist[3]),
             'tanggal_dibuat': playlist[4],
             'pembuat': playlist[5]
         },
@@ -115,7 +124,7 @@ def detail_playlist(cursor: CursorWrapper, request, id_user_playlist):
             'id': song[0],
             'judul': song[1],
             'nama': song[2],
-            'durasi': song[3]
+            'durasi': convert_duration(song[3])
         } for song in songs],
         'id_user_playlist': id_user_playlist
     })

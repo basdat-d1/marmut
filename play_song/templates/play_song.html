@@ -11,8 +11,8 @@
     <div class="flex justify-center items-center h-full">
         <div class="w-full max-w-2xl">
             <h1 class="text-3xl text-white mt-6 mb-3 text-center">Song Detail</h1>
-            <div class="bg-gray-800/20 rounded-3xl shadow-inner p-10 mx-auto">
-                <div class="grid grid-cols-4 gap-y-4 gap-x-24 bg-gray-800/20 text-white shadow-inner border-white rounded-3xl py-12 px-16 items-center" style="min-width: 110%;">
+            <div class="bg-gray-800/20 rounded-3xl shadow-inner p-10 mx-auto" style="overflow:hidden;">
+                <div class="grid grid-cols-4 gap-y-4 gap-x-6 bg-gray-800/20 text-white shadow-inner border-white rounded-3xl py-12 px-6 items-center">
                     <p class="col-span-1"><strong>Judul:</strong></p>
                     <p class="col-span-3">{{ song_title }}</p>
                     
@@ -37,7 +37,7 @@
                     <p class="col-span-3">{{ duration }}</p>
                     
                     <p class="col-span-1"><strong>Tanggal Rilis:</strong></p>
-                    <p class="col-span-3">{{ release_date }}</p>
+                    <p class="col-span-3">{{ release_date|date:"d/m/Y" }}</p>
                     
                     <p class="col-span-1"><strong>Tahun:</strong></p>
                     <p class="col-span-3">{{ year }}</p>
