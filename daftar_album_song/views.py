@@ -7,6 +7,7 @@ from utils.query import connectdb
 import uuid
 import random
 import datetime
+from django.views.decorators.csrf import csrf_exempt
 
 @connectdb
 def list_album(cursor: CursorWrapper, request):
@@ -58,6 +59,7 @@ def list_album(cursor: CursorWrapper, request):
     return render(request, 'list_album_songwriter_artist.html', context)
 
 @connectdb
+@csrf_exempt
 def create_album(cursor: CursorWrapper, request):
 
     # id= request.GET.get("id")
@@ -235,6 +237,7 @@ def list_song(cursor: CursorWrapper, request):
     return render(request, 'list_song_songwriter_artist.html', context)
 
 @connectdb
+@csrf_exempt
 def create_song(cursor: CursorWrapper, request):
     id= request.GET.get("id")
 
