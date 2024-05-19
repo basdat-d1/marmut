@@ -7,7 +7,7 @@
 
 {% block content %}
 <!-- Navbar -->
-{% include "navbar/navbar_pengguna.html" %} <!-- Masukkan navbar di sini -->
+{% include "navbar/navbar_pengguna.html" %}
 
 <!-- Content -->
 <div class="bg-gradient-to-bl from-indigo-500/20 pt-28 min-h-screen"> <!-- Garis di akhir navbar -->
@@ -31,7 +31,7 @@
                             <td class="px-6 py-4 whitespace-nowrap text-black">{{ song.1 }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-black">{{ song.2 }}</td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <button onclick="lihat('{{ song.1 }}')" style="background-color: #3b82f6;" class="hover:bg-blue-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Lihat</button>
+                                <a href="{% url 'play_song:play_song' id_konten=song.0 %}" style="background-color: #3b82f6;" class="hover:bg-blue-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Lihat</a>
                                 <form id="deleteForm-{{ song.0 }}" action="{% url 'downloaded_songs:delete_song_view' song.0 %}" method="post" style="display:inline;">
                                     {% csrf_token %}
                                     <button type="submit" style="background-color: #ef4444;" class="delete-button hover:bg-red-600 text-white font-bold py-2 px-4 ml-2 rounded focus:outline-none focus:shadow-outline" data-song-title="{{ song.1 }}">Hapus</button>
