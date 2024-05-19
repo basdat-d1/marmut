@@ -169,6 +169,7 @@ def login(cursor: CursorWrapper, request):
 
 def handle_pengguna_login(cursor: CursorWrapper, request, user):
     email = user[0]
+    gender = user[3]
     is_artist, is_songwriter, is_podcaster, is_premium = False, False, False, False
 
     records_song_artist, records_song_songwriter, records_podcast = [], [], []
@@ -200,6 +201,7 @@ def handle_pengguna_login(cursor: CursorWrapper, request, user):
 
     request.session["email"] = email
     request.session["role"] = 'pengguna'
+    request.session["gender"] = gender
     request.session["is_premium"] = is_premium
     request.session["is_artist"] = is_artist
     request.session["is_songwriter"] = is_songwriter

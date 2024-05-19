@@ -11,8 +11,8 @@
     <div class="flex justify-center items-center h-full">
         <div class="w-full max-w-2xl">
             <h1 class="text-3xl text-white mt-6 mb-3 text-center">Song Detail</h1>
-            <div class="bg-gray-800/20 rounded-3xl shadow-inner p-10 mx-auto">
-                <div class="grid grid-cols-4 gap-y-4 gap-x-24 bg-gray-800/20 text-white shadow-inner border-white rounded-3xl py-12 px-16 items-center" style="min-width: 110%;">
+            <div class="bg-gray-800/20 rounded-3xl shadow-inner p-10 mx-auto" style="overflow:hidden;">
+                <div class="grid grid-cols-4 gap-y-4 gap-x-6 bg-gray-800/20 text-white shadow-inner border-white rounded-3xl py-12 px-6 items-center">
                     <p class="col-span-1"><strong>Judul:</strong></p>
                     <p class="col-span-3">{{ song_title }}</p>
                     
@@ -37,13 +37,13 @@
                     <p class="col-span-3">{{ duration }}</p>
                     
                     <p class="col-span-1"><strong>Tanggal Rilis:</strong></p>
-                    <p class="col-span-3">{{ release_date }}</p>
+                    <p class="col-span-3">{{ release_date|date:"d/m/Y" }}</p>
                     
                     <p class="col-span-1"><strong>Tahun:</strong></p>
                     <p class="col-span-3">{{ year }}</p>
                     
                     <p class="col-span-1"><strong>Total Play:</strong></p>
-                    <p class="col-span-3">{{ total_plays }}</p>
+                    <p class="col-span-3" id="totalPlays">{{ total_plays }}</p>
                     
                     <p class="col-span-1"><strong>Total Downloads:</strong></p>
                     <p class="col-span-3">{{ total_downloads }}</p>
@@ -56,15 +56,17 @@
                     <input type="range" id="progressSlider" name="songProgress" min="0" max="100" value="0" class="w-full" onchange="updateSliderValue(this.value)">
                     <span id="sliderValue" class="block text-center text-white text-sm md:text-lg">0%</span>
                 </div>
-                <form method="POST">
+                <form id="playForm" method="POST" action="{% url 'play_song:play_song' id_konten=id_konten %}">
                     {% csrf_token %}
                     <div class="flex flex-col space-y-2 text-center">
+                        <button type="button" onclick="playSong()" class="border-2 border-bluebright text-bluebright rounded-xl py-2 px-6 hover:bg-bluebright hover:text-black duration-200 text-sm md:text-lg">Play</button>
                         <a href="{% url 'play_song:add_song_to_user_playlist' id_konten=id_konten %}" class="border-2 border-bluebright text-bluebright rounded-xl py-2 px-6 hover:bg-bluebright hover:text-black duration-200 text-sm md:text-lg">Add to Playlist</a>
                         {% if is_premium %}
                             <button type="submit" formaction="{% url 'play_song:download_song' id_konten=id_konten %}" class="border-2 border-bluebright text-bluebright rounded-xl py-2 px-6 hover:bg-bluebright hover:text-black duration-200 text-sm md:text-lg">Download</button>
                         {% endif %}
                         <a href="{% url 'dashboard:dashboard_pengguna' %}" class="border-2 border-bluebright text-bluebright rounded-xl py-2 px-6 hover:bg-bluebright hover:text-black duration-200 text-sm md:text-lg">Kembali</a>
                     </div>
+                    <input type="hidden" id="songProgress" name="songProgress" value="0">
                 </form>
             </div>
         </div>
@@ -74,6 +76,35 @@
 <script>
     function updateSliderValue(value) {
         document.getElementById('sliderValue').innerText = value + '%';
+        document.getElementById('songProgress').value = value;
+    }
+
+    function playSong() {
+        var progress = document.getElementById('songProgress').value;
+        if (progress > 70) {
+            var totalPlaysElement = document.getElementById('totalPlays');
+            var totalPlays = parseInt(totalPlaysElement.innerText) + 1;
+            totalPlaysElement.innerText = totalPlays;
+            
+            var form = document.getElementById('playForm');
+            var formData = new FormData(form);
+            formData.append('songProgress', progress);
+
+            fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            }).then(response => response.json())
+              .then(data => {
+                if (data.success) {
+                    console.log('Play count updated.');
+                } else {
+                    console.log('Failed to update play count.');
+                }
+            }).catch(error => console.error('Error:', error));
+        }
     }
 </script>
 {% endblock content %}
