@@ -1,4 +1,6 @@
+from datetime import datetime
 from django.shortcuts import render, redirect
+from django.db.backends.utils import CursorWrapper
 from django.http import JsonResponse
 from django.db.backends.utils import CursorWrapper
 from utils.query import connectdb
@@ -17,10 +19,8 @@ def get_downloaded_songs(cursor: CursorWrapper, request):
             WHERE DOWNLOADED_SONG.email_downloader = %s
         """, [email])
         downloaded_songs = cursor.fetchall()
-        print(downloaded_songs)  # Debugging: Print list of downloaded songs
+        
         return downloaded_songs
-    else:
-        return []
 
 @connectdb
 def delete_downloaded_song(cursor: CursorWrapper, request, song_id):

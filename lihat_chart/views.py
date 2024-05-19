@@ -39,11 +39,10 @@ def isi_chart(cursor: CursorWrapper, request):
     is_podcaster = request.session.get('is_podcaster', False)
     is_artist = request.session.get('is_artist', False)
     is_songwriter = request.session.get('is_songwriter', False)
-    is_podcaster = request.session.get('is_podcaster', False)
     status_langganan = request.session.get('status_langganan', 'Non-Premium')
     
     query = """
-    SELECT K.judul, AK.nama, K.tanggal_rilis, S.total_play
+    SELECT K.id, K.judul, AK.nama, K.tanggal_rilis, S.total_play
     FROM CHART AS C
     JOIN PLAYLIST AS P ON C.id_playlist = P.id
     JOIN PLAYLIST_SONG AS PS ON P.id = PS.id_playlist

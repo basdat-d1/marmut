@@ -6,9 +6,7 @@
 {% endblock meta %}
 
 {% block content %}
-{% include "navbar/navbar_pengguna.html" %} <!-- Masukkan navbar di sini -->
-
-<!-- Main Content -->
+{% include "navbar/navbar_pengguna.html" %} 
 <header class="bg-primary-500 text-white py-4">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h1 class="text-2xl font-semibold mt-20 text-center">SEARCH BAR</h1>
@@ -44,7 +42,13 @@
                         <td class="border border-gray-400 px-4 py-2">{{ result.0 }}</td>
                         <td class="border border-gray-400 px-4 py-2">{{ result.2 }}</td>
                         <td class="border border-gray-400 px-4 py-2">
-                            <a href="{% url 'detail_item' item_id=result.3 %}" class="bg-blue-500 text-white px-4 py-2 rounded">Lihat</a>
+                        {% if result.1 == "Podcast" %}
+                            <a href="{% url 'play_podcast:show_podcast' %}?podcast_id={{ result.3 }}"  class="bg-blue-500 text-white px-4 py-2 rounded">Lihat</a>
+                        {% elif result.1 == "User Playlist" %}
+                            <a href="{% url 'play_user_playlist:play_user_playlist' id_user_playlist=result.3 %}" class="bg-blue-500 text-white px-4 py-2 rounded">Lihat</a>
+                        {% else %}
+                        <a href="{% url 'detail_item' item_id=result.3 %}" class="bg-blue-500 text-white px-4 py-2 rounded">Lihat</a>
+                        {% endif %}
                         </td>
                     </tr>
                 {% endfor %}

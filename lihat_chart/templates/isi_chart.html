@@ -31,13 +31,13 @@
                             <tbody>
                                 {% for song in playlist_songs %}
                                 <tr>
-                                    <td class="border border-graybright px-4 py-2 text-white text-lg">{{ song.0 }}</td>
                                     <td class="border border-graybright px-4 py-2 text-white text-lg">{{ song.1 }}</td>
                                     <td class="border border-graybright px-4 py-2 text-white text-lg">{{ song.2 }}</td>
                                     <td class="border border-graybright px-4 py-2 text-white text-lg">{{ song.3 }}</td>
+                                    <td class="border border-graybright px-4 py-2 text-white text-lg">{{ song.4 }}</td>
                                     <td class="border border-graybright px-4 py-2 text-white">
                                         <button class="border-2 border-blue bg-blue text-white rounded-xl py-2 px-4 hover:bg-darkblue duration-200">
-                                            <a href="" class="text-white">See Details</a>
+                                            <a href="{% url 'play_song:play_song' id_konten=song.0 %}" class="text-white">See Details</a>
                                         </button>     
                                     </td>
                                 </tr>
