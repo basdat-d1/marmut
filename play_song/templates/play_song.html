@@ -6,7 +6,12 @@
 {% endblock meta %}
 
 {% block content %}
-{% include "navbar/navbar_pengguna.html" %}
+
+{% if request.session.role == "pengguna" %}
+    {% include "navbar/navbar_pengguna.html" %}
+{% elif request.session.role == "label" %}
+    {% include "navbar/navbar_label.html" %}
+{% endif %}
 <div class="bg-gradient-to-bl from-indigo-500/20 pt-28 h-screen flex justify-center">
     <div class="flex justify-center items-center h-full">
         <div class="w-full max-w-2xl">
