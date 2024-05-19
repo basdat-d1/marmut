@@ -4,8 +4,10 @@ from django.contrib import messages
 from django.shortcuts import render, redirect
 from django.db.backends.utils import CursorWrapper
 from utils.query import connectdb
+from django.views.decorators.csrf import csrf_exempt
 
 @connectdb
+@csrf_exempt
 def play_song(cursor: CursorWrapper, request, id_konten):
     if request.method == 'POST':
         progress = int(request.POST.get('songProgress', 0))
@@ -60,6 +62,7 @@ def play_song(cursor: CursorWrapper, request, id_konten):
     return render(request, 'play_song.html', context)
 
 @connectdb
+@csrf_exempt
 def add_song_to_user_playlist(cursor: CursorWrapper, request, id_konten):
     email = request.session.get('email')
 
@@ -126,6 +129,7 @@ def add_song_to_user_playlist(cursor: CursorWrapper, request, id_konten):
     })
 
 @connectdb
+@csrf_exempt
 def download_song(cursor: CursorWrapper, request, id_konten):
     email = request.session.get('email')
     if request.method == 'POST':
