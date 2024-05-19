@@ -84,5 +84,5 @@ def cek_royalti_label(cursor: CursorWrapper, request):
         'isPodcaster': request.session.get('is_podcaster'),
     }
 
-    return render(request, 'cek_royalti.html', context)
+    return render(request, 'cek_royalti_label.html', context)
 
