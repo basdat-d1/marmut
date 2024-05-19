@@ -2,9 +2,6 @@ import uuid
 from django.shortcuts import render
 from django.db.backends.utils import CursorWrapper
 from django.views.decorators.csrf import csrf_exempt
-from django.urls import reverse
-from django.http import HttpResponseRedirect
-
 from utils.query import connectdb
 
 @connectdb
@@ -13,10 +10,8 @@ def search_view(cursor: CursorWrapper, request):
     if request.method == 'GET':
         query = request.GET.get('query', '')
 
-        # Initialize an empty list to store search results
         search_results = []
 
-        # Search for songs, podcasts, user playlists, and labels
         cursor.execute("""
             SELECT k.judul AS judul, 'Song' AS tipe, a.email_akun AS oleh, k.id
             FROM KONTEN k
@@ -46,29 +41,22 @@ def search_view(cursor: CursorWrapper, request):
             WHERE l.nama ILIKE %s
         """, ['%' + query + '%', '%' + query + '%', '%' + query + '%', '%' + query + '%'])
 
-        # Fetch all the results
         search_results = cursor.fetchall()
 
-        # Debugging: Print query and search results
         print("Query:", query)
         print("Search results:", search_results)
 
-        # Render the search results template with the search query and results
         return render(request, 'search_bar.html', {'query': query, 'search_results': search_results})
     else:
-        # Jika metode yang digunakan bukan GET
         return render(request, 'error.html', {'message': 'Metode yang digunakan tidak valid'})
 
 @connectdb
 @csrf_exempt
 def detail_item_view(cursor: CursorWrapper, request, item_id):
     try:
-        # Ensure item_id is a string
         item_id_str = str(item_id)
-        # Convert item_id to a UUID
         item_uuid = uuid.UUID(item_id_str)
     except ValueError as e:
-        # Print the error and item_id for debugging
         print("Error converting item_id to UUID:", e)
         print("item_id:", item_id)
         print("item_id type:", type(item_id))
