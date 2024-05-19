@@ -43,7 +43,7 @@
                     <p class="col-span-3">{{ year }}</p>
                     
                     <p class="col-span-1"><strong>Total Play:</strong></p>
-                    <p class="col-span-3">{{ total_plays }}</p>
+                    <p class="col-span-3" id="totalPlays">{{ total_plays }}</p>
                     
                     <p class="col-span-1"><strong>Total Downloads:</strong></p>
                     <p class="col-span-3">{{ total_downloads }}</p>
@@ -56,15 +56,17 @@
                     <input type="range" id="progressSlider" name="songProgress" min="0" max="100" value="0" class="w-full" onchange="updateSliderValue(this.value)">
                     <span id="sliderValue" class="block text-center text-white text-sm md:text-lg">0%</span>
                 </div>
-                <form method="POST">
+                <form id="playForm" method="POST" action="{% url 'play_song:play_song' id_konten=id_konten %}">
                     {% csrf_token %}
                     <div class="flex flex-col space-y-2 text-center">
+                        <button type="button" onclick="playSong()" class="border-2 border-bluebright text-bluebright rounded-xl py-2 px-6 hover:bg-bluebright hover:text-black duration-200 text-sm md:text-lg">Play</button>
                         <a href="{% url 'play_song:add_song_to_user_playlist' id_konten=id_konten %}" class="border-2 border-bluebright text-bluebright rounded-xl py-2 px-6 hover:bg-bluebright hover:text-black duration-200 text-sm md:text-lg">Add to Playlist</a>
                         {% if is_premium %}
                             <button type="submit" formaction="{% url 'play_song:download_song' id_konten=id_konten %}" class="border-2 border-bluebright text-bluebright rounded-xl py-2 px-6 hover:bg-bluebright hover:text-black duration-200 text-sm md:text-lg">Download</button>
                         {% endif %}
                         <a href="{% url 'dashboard:dashboard_pengguna' %}" class="border-2 border-bluebright text-bluebright rounded-xl py-2 px-6 hover:bg-bluebright hover:text-black duration-200 text-sm md:text-lg">Kembali</a>
                     </div>
+                    <input type="hidden" id="songProgress" name="songProgress" value="0">
                 </form>
             </div>
         </div>
@@ -74,6 +76,35 @@
 <script>
     function updateSliderValue(value) {
         document.getElementById('sliderValue').innerText = value + '%';
+        document.getElementById('songProgress').value = value;
+    }
+
+    function playSong() {
+        var progress = document.getElementById('songProgress').value;
+        if (progress > 70) {
+            var totalPlaysElement = document.getElementById('totalPlays');
+            var totalPlays = parseInt(totalPlaysElement.innerText) + 1;
+            totalPlaysElement.innerText = totalPlays;
+            
+            var form = document.getElementById('playForm');
+            var formData = new FormData(form);
+            formData.append('songProgress', progress);
+
+            fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            }).then(response => response.json())
+              .then(data => {
+                if (data.success) {
+                    console.log('Play count updated.');
+                } else {
+                    console.log('Failed to update play count.');
+                }
+            }).catch(error => console.error('Error:', error));
+        }
     }
 </script>
 {% endblock content %}
