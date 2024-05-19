@@ -18,7 +18,7 @@
         <form action="" method="GET">
             <div class="flex items-center">
                 <label for="query" class="mr-4 text-white">Query:</label>
-                <input type="text" id="query" name="query" class="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:border-blue-500 flex-grow">
+                <input type="text" id="query" name="query" class="px-4 py-2 text-black border border-gray-300 rounded-md focus:outline-none focus:ring focus:border-blue-500 flex-grow">
                 <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-md ml-4">CARI</button>
             </div>
         </form>
@@ -44,10 +44,12 @@
                         <td class="border border-gray-400 px-4 py-2">
                         {% if result.1 == "Podcast" %}
                             <a href="{% url 'play_podcast:show_podcast' %}?podcast_id={{ result.3 }}"  class="bg-blue-500 text-white px-4 py-2 rounded">Lihat</a>
+                        {% elif result.1 == "Song" %}
+                            <a href="{% url 'play_song:play_song' id_konten=result.3%}"  class="bg-blue-500 text-white px-4 py-2 rounded">Lihat</a>
                         {% elif result.1 == "User Playlist" %}
                             <a href="{% url 'play_user_playlist:play_user_playlist' id_user_playlist=result.3 %}" class="bg-blue-500 text-white px-4 py-2 rounded">Lihat</a>
                         {% else %}
-                        <a href="{% url 'detail_item' item_id=result.3 %}" class="bg-blue-500 text-white px-4 py-2 rounded">Lihat</a>
+                            <a href="{% url 'detail_item' item_id=result.3 %}" class="bg-blue-500 text-white px-4 py-2 rounded">Lihat</a>
                         {% endif %}
                         </td>
                     </tr>

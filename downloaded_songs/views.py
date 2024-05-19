@@ -1,6 +1,5 @@
 from datetime import datetime
 from django.shortcuts import render, redirect
-from django.db.backends.utils import CursorWrapper
 from django.http import JsonResponse
 from django.db.backends.utils import CursorWrapper
 from utils.query import connectdb
@@ -24,7 +23,8 @@ def get_downloaded_songs(cursor: CursorWrapper, request):
 
 @connectdb
 def delete_downloaded_song(cursor: CursorWrapper, request, song_id):
-    email = request.session.get('email', None)
+    email = request.session.get('email')
+    
     if email:
         cursor.execute("""
             DELETE FROM DOWNLOADED_SONG
@@ -36,7 +36,7 @@ def delete_downloaded_song(cursor: CursorWrapper, request, song_id):
             RETURNING DOWNLOADED_SONG.id_song
         """, [song_id, email])
         deleted_song = cursor.fetchone()
-        print(deleted_song)  # Debugging: Print ID of the deleted song
+
         if deleted_song:
             return True
     return False
@@ -49,5 +49,5 @@ def delete_song(request, song_id):
     if request.method == 'POST':
         success = delete_downloaded_song(request, song_id)
         if success:
-            return redirect('downloaded_songs:downloaded_songs')
+            return JsonResponse({'success': True})
     return JsonResponse({'success': False, 'message': 'Failed to delete song'})
