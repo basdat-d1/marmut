@@ -21,8 +21,8 @@
                 <a href="{% url 'podcast:daftar_podcast' %}" class="hover:bg-blue-700 px-3 py-2 rounded">Podcast</a>
             {% endif %}
             {% if request.session.is_artist or request.session.is_songwriter %}
-                <a href="/kelola_album_songs" class="hover:bg-blue-700 px-3 py-2 rounded">Album & Songs</a>
-                <a href="/cek_royalti" class="hover:bg-blue-700 px-3 py-2 rounded">Cek Royalti</a>
+                <a href="{% url 'daftar_album_song:list_album' %}" class="hover:bg-blue-700 px-3 py-2 rounded">Album & Songs</a>
+                <a href="{% url 'cek_royalti:cek_royalti' %}" class="hover:bg-blue-700 px-3 py-2 rounded">Cek Royalti</a>
             {% endif %}
             <form onsubmit="search(); return false;" class="flex items-center">
                 <input type="text" placeholder="Search..." id="searchInput" class="px-3 py-2 rounded text-black border-2 border-blue" style="background-color: white; outline: none; transition: all 0.3s ease;">

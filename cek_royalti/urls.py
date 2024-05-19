@@ -1,7 +1,7 @@
 from django.urls import path
 from .views import (cek_royalti, cek_royalti_label)
 
-app_name = 'cek-royalti'
+app_name = 'cek_royalti'
 
 urlpatterns = [
     path('', cek_royalti, name='cek_royalti'),

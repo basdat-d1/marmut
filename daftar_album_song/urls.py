@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import (list_album, create_album, list_song, create_song, list_album_label, list_song_label, delete_song,
-                    delete_album, delete_album_label)
+                    delete_album, delete_album_label, delete_song_label)
 from daftar_album_song.views import list_song, list_album
 
 app_name = 'daftar_album_song'
@@ -15,4 +15,5 @@ urlpatterns = [
     path('list-album/list-song/delete-song/', delete_song, name='delete_song'),
     path('list-album/delete-album/', delete_album, name='delete_album'),
     path('list-album/delete-album/label/', delete_album_label, name='delete_album_label'),
+    path('list-album/delete-album/label/', delete_song_label, name='delete_song_label'),
 ]
