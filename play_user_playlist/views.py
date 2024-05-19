@@ -6,7 +6,11 @@ from utils.query import connectdb
 def convert_duration(total_minutes):
     hours = total_minutes // 60
     minutes = total_minutes % 60
-    return f"{hours} jam {minutes} menit"
+
+    if hours >= 1:
+        return f"{hours} jam {minutes} menit"
+    else:
+        return f"{minutes} menit"
 
 @connectdb
 def play_user_playlist(cursor: CursorWrapper, request, id_user_playlist):
@@ -57,6 +61,6 @@ def play_user_playlist(cursor: CursorWrapper, request, id_user_playlist):
             'pembuat': playlist[5],
             'email_pembuat': playlist[6]
         },
-        'songs': [{'id': song[0], 'judul': song[1], 'nama_artis': song[2], 'durasi': song[3]} for song in songs],
+        'songs': [{'id': song[0], 'judul': song[1], 'nama_artis': song[2], 'durasi': convert_duration(song[3])} for song in songs],
         'id_user_playlist': id_user_playlist
     })

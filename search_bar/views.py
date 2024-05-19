@@ -43,9 +43,6 @@ def search_view(cursor: CursorWrapper, request):
 
         search_results = cursor.fetchall()
 
-        print("Query:", query)
-        print("Search results:", search_results)
-
         return render(request, 'search_bar.html', {'query': query, 'search_results': search_results})
     else:
         return render(request, 'error.html', {'message': 'Metode yang digunakan tidak valid'})
