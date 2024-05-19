@@ -8,8 +8,6 @@ import uuid
 import random
 import datetime
 
-# Create your views here.
-
 @connectdb
 def list_album(cursor: CursorWrapper, request):
     try:

@@ -3,8 +3,10 @@ from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from django.db.backends.utils import CursorWrapper
 from utils.query import connectdb
+from django.views.decorators.csrf import csrf_exempt
 
 @connectdb
+@csrf_exempt
 def get_downloaded_songs(cursor: CursorWrapper, request):
     email = request.session.get('email', None)
     if email:
@@ -22,6 +24,7 @@ def get_downloaded_songs(cursor: CursorWrapper, request):
         return downloaded_songs
 
 @connectdb
+@csrf_exempt
 def delete_downloaded_song(cursor: CursorWrapper, request, song_id):
     email = request.session.get('email')
     
@@ -41,10 +44,12 @@ def delete_downloaded_song(cursor: CursorWrapper, request, song_id):
             return True
     return False
 
+@csrf_exempt
 def downloaded_songs(request):
     downloaded_songs = get_downloaded_songs(request)
     return render(request, 'downloaded_songs.html', {'downloaded_songs': downloaded_songs})
 
+@csrf_exempt
 def delete_song(request, song_id):
     if request.method == 'POST':
         success = delete_downloaded_song(request, song_id)
