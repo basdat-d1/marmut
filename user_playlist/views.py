@@ -1,6 +1,7 @@
 import uuid
 from django.urls import reverse
 from django.shortcuts import render, redirect
+from django.views.decorators.csrf import csrf_exempt
 from django.contrib import messages
 from datetime import date
 from django.http import HttpResponseRedirect
@@ -17,6 +18,7 @@ def convert_duration(total_minutes):
         return f"{minutes} menit"
 
 @connectdb
+@csrf_exempt
 def user_playlist(cursor: CursorWrapper, request):
     email_pembuat = request.session.get('email')
 
@@ -37,6 +39,7 @@ def user_playlist(cursor: CursorWrapper, request):
     return render(request, "user_playlist.html", {'playlists': playlist_data})
 
 @connectdb
+@csrf_exempt
 def tambah_playlist(cursor: CursorWrapper, request):
     if request.method == 'POST':
         judul = request.POST.get('judul')
@@ -58,6 +61,7 @@ def tambah_playlist(cursor: CursorWrapper, request):
     return render(request, 'tambah_playlist.html')
 
 @connectdb
+@csrf_exempt
 def ubah_playlist(cursor: CursorWrapper, request, id_user_playlist):
     if request.method == 'POST':
         judul = request.POST.get('judul')
@@ -81,7 +85,8 @@ def ubah_playlist(cursor: CursorWrapper, request, id_user_playlist):
     return render(request, 'ubah_playlist.html', {'playlist': {'id': id_user_playlist, 'judul': playlist[0], 'deskripsi': playlist[1]}})
 
 @connectdb
-def hapus_playlist(cursor: CursorWrapper, id_user_playlist):
+@csrf_exempt
+def hapus_playlist(cursor: CursorWrapper, request, id_user_playlist):
     cursor.execute("""
         DELETE FROM USER_PLAYLIST
         WHERE id_user_playlist = %s;
@@ -90,6 +95,7 @@ def hapus_playlist(cursor: CursorWrapper, id_user_playlist):
     return HttpResponseRedirect(reverse('user_playlist:user_playlist'))
 
 @connectdb
+@csrf_exempt
 def detail_playlist(cursor: CursorWrapper, request, id_user_playlist):
     cursor.execute("""
         SELECT UP.judul, UP.deskripsi, UP.jumlah_lagu, UP.total_durasi, UP.tanggal_dibuat, A.nama as pembuat
@@ -130,6 +136,7 @@ def detail_playlist(cursor: CursorWrapper, request, id_user_playlist):
     })
 
 @connectdb
+@csrf_exempt
 def tambah_lagu_playlist(cursor: CursorWrapper, request, id_user_playlist):
     if request.method == 'POST':
         id_song = request.POST.get('id_song')
@@ -164,6 +171,7 @@ def tambah_lagu_playlist(cursor: CursorWrapper, request, id_user_playlist):
     })
 
 @connectdb
+@csrf_exempt
 def hapus_lagu_playlist(cursor: CursorWrapper, request, id_user_playlist, id_song):
     cursor.execute("""
         DELETE FROM PLAYLIST_SONG

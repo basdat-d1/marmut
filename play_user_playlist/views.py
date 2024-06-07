@@ -1,6 +1,7 @@
 from datetime import datetime
 from django.shortcuts import render, redirect
 from django.db.backends.utils import CursorWrapper
+from django.views.decorators.csrf import csrf_exempt
 from utils.query import connectdb
 
 def convert_duration(total_minutes):
@@ -13,6 +14,7 @@ def convert_duration(total_minutes):
         return f"{minutes} menit"
 
 @connectdb
+@csrf_exempt
 def play_user_playlist(cursor: CursorWrapper, request, id_user_playlist):
     email = request.session.get('email')
 
