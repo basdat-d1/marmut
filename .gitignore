@@ -2,9 +2,43 @@
 *.log
 *.pot
 *.pyc
-__pycache__
+__pycache__/
+local_settings.py
 db.sqlite3
-media
+media/
+
+# Environment variables
+.env
+.env.local
+.env.production
+.env.staging
+
+# Virtual environment
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Database
+*.db
+*.sqlite3
+
+# Static files
+staticfiles/
+static/
+
+# Logs
+logs/
+*.log
 
 # Backup files
 *.bak 

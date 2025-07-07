@@ -78,14 +78,6 @@ def create_album(cursor: CursorWrapper, request):
         genres = request.POST.getlist('genre')
         durasi = request.POST.get('durasi')
 
-        print(judul_album)
-        print(label)
-        print(judul_song)
-        print(artist)
-        print(songwriters)
-        print(genres)
-        print(durasi)
-
         # insert data ke ALBUM
         id_album = str(uuid.uuid4())
         cursor.execute(
@@ -116,8 +108,6 @@ def create_album(cursor: CursorWrapper, request):
 
         # insert data ke royalti (songwriter)
         for songwriter in songwriters:
-            print(str(songwriter))
-            print("runnn")
             cursor.execute("SELECT id_pemilik_hak_cipta FROM SONGWRITER WHERE id = %s", [songwriter])
             id_songwriter  = cursor.fetchone()
             jumlah = random.randint(1000, 99999999)
@@ -183,8 +173,6 @@ def create_album(cursor: CursorWrapper, request):
         cursor.execute("SELECT SONGWRITER.id, AKUN.nama FROM AKUN JOIN SONGWRITER ON AKUN.email=SONGWRITER.email_akun WHERE AKUN.email = %s ", [email])
         songwriter  = cursor.fetchone()
 
-    print(songwriter)
-
     cursor.execute("SELECT id, nama FROM LABEL;")
     label_list = cursor.fetchall()
     
@@ -222,8 +210,6 @@ def list_song(cursor: CursorWrapper, request):
     cursor.execute(query)
     songs = cursor.fetchall()
 
-    print(album_judul[0])
-    
     context = {
         "album_id": id,
         "album_judul": album_judul[0],
@@ -259,12 +245,6 @@ def create_song(cursor: CursorWrapper, request):
         genres = request.POST.getlist('genre')
         durasi = request.POST.get('durasi')
 
-        print(judul)
-        print(artist)
-        print(songwriters)
-        print(genres)
-        print(durasi)
-
         # insert data ke KONTEN
         id_konten = str(uuid.uuid4())
         judul_song = judul
@@ -288,8 +268,6 @@ def create_song(cursor: CursorWrapper, request):
 
         # insert data ke royalti (songwriter)
         for songwriter in songwriters:
-            print(str(songwriter))
-            print("runnn")
             cursor.execute("SELECT id_pemilik_hak_cipta FROM SONGWRITER WHERE id = %s", [songwriter])
             id_songwriter  = cursor.fetchone()
             jumlah = random.randint(1000, 99999999)
@@ -354,8 +332,6 @@ def create_song(cursor: CursorWrapper, request):
     if request.session.get('is_songwriter') :
         cursor.execute("SELECT SONGWRITER.id, AKUN.nama FROM AKUN JOIN SONGWRITER ON AKUN.email=SONGWRITER.email_akun WHERE AKUN.email = %s ", [email])
         songwriter  = cursor.fetchone()
-
-    print(songwriter)
     
     context = {
         "album_id": id,
@@ -460,8 +436,6 @@ def list_song_label(cursor: CursorWrapper, request):
                                 """)
     cursor.execute(query)
     songs = cursor.fetchall()
-
-    print(album_judul[0])
     
     context = {
         "album_id": id,

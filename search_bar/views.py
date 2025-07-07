@@ -54,9 +54,6 @@ def detail_item_view(cursor: CursorWrapper, request, item_id):
         item_id_str = str(item_id)
         item_uuid = uuid.UUID(item_id_str)
     except ValueError as e:
-        print("Error converting item_id to UUID:", e)
-        print("item_id:", item_id)
-        print("item_id type:", type(item_id))
         return render(request, 'error.html', {'message': 'ID tidak valid'})
 
     cursor.execute("""

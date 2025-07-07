@@ -79,7 +79,6 @@ def pembayaran_paket(request):
             messages.success(request, 'Pembayaran berhasil! Akun Anda sekarang telah menjadi Premium.')
 
         except Exception as e:
-            print("Error saving transaction:", e)
             messages.error(request, 'Terjadi kesalahan dalam proses pembayaran.')
 
         # Redirect ke halaman riwayat transaksi dengan namespace 'langganan_paket'
@@ -101,6 +100,6 @@ def riwayat_transaksi(request):
         transaksi_list = cursor.fetchall()
 
     # Debugging: Cetak riwayat transaksi yang diambil dari basis data
-    print("Riwayat Transaksi:", transaksi_list)
+    ("Riwayat Transaksi:", transaksi_list)
 
     return render(request, 'riwayat_transaksi.html', {'riwayat_transaksi': transaksi_list})
