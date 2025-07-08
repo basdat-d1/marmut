@@ -1,216 +1,336 @@
-from django.shortcuts import render
-from django.http import HttpResponse, HttpResponseRedirect, HttpResponseNotFound
-from django.shortcuts import render
-from play_podcast.views import convert_duration
-from utils.query import connectdb
-from django.urls import reverse
-from django.db.backends.utils import CursorWrapper
-from uuid import uuid4
-from django.views.decorators.csrf import csrf_exempt
 from datetime import datetime
-from django.http import JsonResponse
+from uuid import uuid4
+from rest_framework import status
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from utils.authentication import require_authentication
+from utils.database import execute_query, execute_single_query, execute_insert_query, execute_delete_query
 
-@connectdb
-def daftar_podcast(cursor: CursorWrapper, request):
-    email = request.session.get('email')
-    is_podcaster = request.session.get('is_podcaster', False)
-    is_artist = request.session.get('is_artist', False)
-    is_songwriter = request.session.get('is_songwriter', False)
-    is_podcaster = request.session.get('is_podcaster', False)
-    status_langganan = request.session.get('status_langganan', 'Non-Premium')
-    
-    cursor.execute("""
-        SELECT p.id_konten AS podcast_id, k.judul AS podcast_title, a.nama AS podcaster_name,
-               k.durasi AS total_duration, COUNT(e.id_episode) AS episode_count
+def convert_duration(minutes):
+    """Convert minutes to format: _ jam _ menit"""
+    hours = minutes // 60
+    mins = minutes % 60
+    if hours > 0 and mins > 0:
+        return f"{hours} jam {mins} menit"
+    elif hours > 0:
+        return f"{hours} jam"
+    else:
+        return f"{mins} menit"
+
+@api_view(['GET'])
+@require_authentication
+def get_user_podcasts(request):
+    """Get podcasts created by the authenticated user"""
+    try:
+        email = request.user_email
+        if not email:
+            return Response({'error': 'Not authenticated'}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        # Check if user is a podcaster
+        podcaster = execute_single_query(
+            "SELECT email FROM PODCASTER WHERE email = %s",
+            [email]
+        )
+        
+        if not podcaster:
+            return Response({'error': 'User is not a podcaster'}, status=status.HTTP_403_FORBIDDEN)
+        
+        # Get user's podcasts
+        podcasts = execute_query(
+            """SELECT p.id_konten, k.judul, k.durasi, k.tanggal_rilis,
+                      COUNT(e.id_episode) as episode_count
         FROM PODCAST p
         JOIN KONTEN k ON p.id_konten = k.id
         LEFT JOIN EPISODE e ON p.id_konten = e.id_konten_podcast
-        LEFT JOIN PODCASTER po ON p.email_podcaster = po.email
-        LEFT JOIN AKUN a ON po.email = a.email
-        WHERE po.email = %s
-        GROUP BY p.id_konten, k.judul, a.nama, k.durasi
-        ORDER BY k.judul;
-    """, (email,))
-    
-    podcast_data = cursor.fetchall()
+               WHERE p.email_podcaster = %s
+               GROUP BY p.id_konten, k.judul, k.durasi, k.tanggal_rilis
+               ORDER BY k.tanggal_rilis DESC""",
+            [email]
+        )
+        
+        return Response({
+            'podcasts': [
+                {
+                    'id': podcast['id_konten'],
+                    'judul': podcast['judul'],
+                    'total_durasi': convert_duration(podcast['durasi']),
+                    'episode_count': podcast['episode_count'],
+                    'tanggal_rilis': podcast['tanggal_rilis']
+                } for podcast in podcasts
+            ]
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    podcasts = []
-    for row in podcast_data:
-        podcast = {
-            'id': row[0],
-            'title': row[1],
-            'podcaster_name': row[2],
-            'total_duration': convert_duration(row[3]),
-            'episode_count': row[4]
-        }
-        podcasts.append(podcast)
-   
-    cursor.execute("SELECT DISTINCT genre FROM Genre;")
-    genres = [row[0] for row in cursor.fetchall()]
-    
-    content = {
-        'podcasts': podcasts,
-        'status_langganan': status_langganan,
-        'isArtist': is_artist,
-        'isSongwriter': is_songwriter,
-        'isPodcaster': is_podcaster,
-        'genres': genres 
-    }
-    
-    return render(request, 'podcast.html', content)
-
-
-@connectdb
-def daftar_episode(cursor: CursorWrapper, request):
-    podcast_id = request.GET.get('podcast')
-
-    if not podcast_id:
-        return HttpResponseNotFound('Podcast not found.')
-
-    cursor.execute("""
-        SELECT judul
-        FROM KONTEN
-        WHERE id = %s;
-    """, (podcast_id,))
-    
-    row = cursor.fetchone()
-
-    if not row:
-        return HttpResponseNotFound('Podcast not found.')
-
-    podcast_name = row[0]
-
-    cursor.execute("""
-        SELECT id_episode, judul, deskripsi, tanggal_rilis, durasi
-        FROM EPISODE
-        WHERE id_konten_podcast = %s
-        ORDER BY tanggal_rilis;
-    """, (podcast_id,))
-    
-    episodes_data = cursor.fetchall()
-
-    episodes = []
-    for episode in episodes_data:
-        episode_data = {
-            'id': episode[0],
-            'title': episode[1],
-            'description': episode[2],
-            'release_date': episode[3],
-            'duration': convert_duration(episode[4])
-        }
-        episodes.append(episode_data)
-
-    content = {
-        'podcast_name': podcast_name,
-        'episodes': episodes,
-    }
-
-    return render(request, 'episode.html', content)
-
-@connectdb
-@csrf_exempt
-def add_podcast(cursor: CursorWrapper, request):
-    if request.method == 'POST':
-        email = request.session.get('email')
-        podcast_title = request.POST.get("title").strip()
-        podcast_genre = request.POST.get("genre").strip()
+@api_view(['POST'])
+@require_authentication
+def create_podcast(request):
+    """Create a new podcast"""
+    try:
+        email = request.user_email
+        if not email:
+            return Response({'error': 'Not authenticated'}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        # Check if user is a podcaster
+        podcaster = execute_single_query(
+            "SELECT email FROM PODCASTER WHERE email = %s",
+            [email]
+        )
+        
+        if not podcaster:
+            return Response({'error': 'User is not a podcaster'}, status=status.HTTP_403_FORBIDDEN)
+        
+        data = request.data
+        podcast_title = data.get('title', '').strip()
+        podcast_genre = data.get('genre', '').strip()
+        
+        if not podcast_title or not podcast_genre:
+            return Response({'error': 'Title and genre are required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if podcast_genre == "Select Genre":
+            return Response({'error': 'Please select a valid genre'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Create podcast
         id_konten = str(uuid4())
-        tanggal_rilis = str(datetime.now().date())
+        tanggal_rilis = datetime.now().date()
         tahun = datetime.now().year
         total_durasi = 0
         
-        if not podcast_title or not podcast_genre:
-            return HttpResponseNotFound()
+        # Insert into KONTEN table
+        execute_insert_query(
+            """INSERT INTO KONTEN (id, judul, tanggal_rilis, tahun, durasi)
+               VALUES (%s, %s, %s, %s, %s)""",
+            [id_konten, podcast_title, tanggal_rilis, tahun, total_durasi]
+        )
         
-        if podcast_genre == "Select Genre":
-            return HttpResponseNotFound()
-            
-        # Masukkan data ke dalam tabel KONTEN
-        cursor.execute("""
-            INSERT INTO KONTEN (id, judul, tanggal_rilis, tahun, durasi)
-            VALUES (%s, %s, %s, %s, %s);
-        """, (id_konten, podcast_title, tanggal_rilis, tahun, total_durasi))
-
-        # Masukkan data ke dalam tabel GENRE
-        cursor.execute("""
-            INSERT INTO GENRE (id_konten, genre)
-            VALUES (%s, %s);
-        """, (id_konten, podcast_genre))
-
-        # Masukkan data ke dalam tabel PODCAST
-        cursor.execute("""
-            INSERT INTO PODCAST (id_konten, email_podcaster)
-            VALUES (%s, %s);
-        """, (id_konten, email))
-
+        # Insert into GENRE table
+        execute_insert_query(
+            """INSERT INTO GENRE (id_konten, genre)
+               VALUES (%s, %s)""",
+            [id_konten, podcast_genre]
+        )
         
-        return HttpResponse(b"CREATED", status=201)
-
-    return HttpResponseNotFound()
-
-@connectdb
-@csrf_exempt
-def remove_podcast(cursor: CursorWrapper, request):
-    if request.method == 'POST':
-        podcastID = request.POST.get("id")
+        # Insert into PODCAST table
+        execute_insert_query(
+            """INSERT INTO PODCAST (id_konten, email_podcaster)
+               VALUES (%s, %s)""",
+            [id_konten, email]
+        )
         
-        # Query SQL untuk menghapus data konten dari tabel konten
-        query = """
-        DELETE FROM KONTEN
-        WHERE id = %s;
-        """
-
-        cursor.execute(query, (podcastID,))
+        return Response({
+            'message': 'Podcast created successfully',
+            'podcast': {
+                'id': id_konten,
+                'judul': podcast_title,
+                'genre': podcast_genre,
+                'tanggal_rilis': tanggal_rilis
+            }
+        }, status=status.HTTP_201_CREATED)
         
-        return HttpResponse(b"DELETED", status=204)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    return HttpResponseNotFound()
+@api_view(['DELETE'])
+@require_authentication
+def delete_podcast(request, podcast_id):
+    """Delete a podcast"""
+    try:
+        email = request.user_email
+        if not email:
+            return Response({'error': 'Not authenticated'}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        # Check if user owns the podcast
+        podcast = execute_single_query(
+            "SELECT email_podcaster FROM PODCAST WHERE id_konten = %s",
+            [podcast_id]
+        )
+        
+        if not podcast:
+            return Response({'error': 'Podcast not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        if podcast['email_podcaster'] != email:
+            return Response({'error': 'Unauthorized to delete this podcast'}, status=status.HTTP_403_FORBIDDEN)
+        
+        # Delete podcast (cascade will handle related records)
+        execute_delete_query(
+            "DELETE FROM KONTEN WHERE id = %s",
+            [podcast_id]
+        )
+        
+        return Response({
+            'message': 'Podcast deleted successfully'
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+@api_view(['GET'])
+@require_authentication
+def get_podcast_episodes(request, podcast_id):
+    """Get episodes for a specific podcast"""
+    try:
+        email = request.user_email
+        if not email:
+            return Response({'error': 'Not authenticated'}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        # Check if user owns the podcast
+        podcast = execute_single_query(
+            """SELECT p.email_podcaster, k.judul
+               FROM PODCAST p
+               JOIN KONTEN k ON p.id_konten = k.id
+               WHERE p.id_konten = %s""",
+            [podcast_id]
+        )
+        
+        if not podcast:
+            return Response({'error': 'Podcast not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        if podcast['email_podcaster'] != email:
+            return Response({'error': 'Unauthorized to view episodes'}, status=status.HTTP_403_FORBIDDEN)
+        
+        # Get episodes
+        episodes = execute_query(
+            """SELECT id_episode, judul, deskripsi, tanggal_rilis, durasi
+               FROM EPISODE
+               WHERE id_konten_podcast = %s
+               ORDER BY tanggal_rilis DESC""",
+            [podcast_id]
+        )
+        
+        return Response({
+            'podcast_name': podcast['judul'],
+            'episodes': [
+                {
+                    'id': episode['id_episode'],
+                    'judul': episode['judul'],
+                    'deskripsi': episode['deskripsi'],
+                    'tanggal_rilis': episode['tanggal_rilis'],
+                    'durasi': convert_duration(episode['durasi'])
+                } for episode in episodes
+            ]
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-@connectdb
-@csrf_exempt
-def add_episode(cursor: CursorWrapper, request):
-    if request.method == 'POST':
-        podcast_id = request.POST.get("pod_id")
-        episode_title = request.POST.get("ep_title")
-        episode_description = request.POST.get("ep_description")        
-        episode_duration_str = request.POST.get("ep_duration")
+@api_view(['POST'])
+@require_authentication
+def create_episode(request, podcast_id):
+    """Create a new episode for a podcast"""
+    try:
+        email = request.session.get('email')
+        if not email:
+            return Response({'error': 'Not authenticated'}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        # Check if user owns the podcast
+        podcast = execute_single_query(
+            "SELECT email_podcaster FROM PODCAST WHERE id_konten = %s",
+            [podcast_id]
+        )
+        
+        if not podcast:
+            return Response({'error': 'Podcast not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        if podcast['email_podcaster'] != email:
+            return Response({'error': 'Unauthorized to add episodes'}, status=status.HTTP_403_FORBIDDEN)
+        
+        data = request.data
+        episode_title = data.get('title', '').strip()
+        episode_description = data.get('description', '').strip()
+        episode_duration_str = data.get('duration', '')
         
         if not episode_title or not episode_description:
-            return HttpResponseNotFound()
-
-        if not episode_duration_str or int(episode_duration_str) <= 0:
-            return HttpResponseNotFound()
+            return Response({'error': 'Title and description are required'}, status=status.HTTP_400_BAD_REQUEST)
         
-        episode_duration = int(episode_duration_str) * 60
+        try:
+            episode_duration_minutes = int(episode_duration_str)
+            if episode_duration_minutes <= 0:
+                raise ValueError()
+        except (ValueError, TypeError):
+            return Response({'error': 'Duration must be a positive number'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Create episode
         id_episode = str(uuid4())
-        tanggal_rilis = str(datetime.now().date())
+        tanggal_rilis = datetime.now().date()
+        episode_duration = episode_duration_minutes * 60  # Convert to seconds
         
-        cursor.execute("""
-            INSERT INTO EPISODE (id_episode, id_konten_podcast, judul, deskripsi, durasi, tanggal_rilis)
-            VALUES (%s, %s, %s, %s, %s, %s)
-        """, (id_episode, podcast_id, episode_title, episode_description, episode_duration, tanggal_rilis))
+        execute_insert_query(
+            """INSERT INTO EPISODE (id_episode, id_konten_podcast, judul, deskripsi, durasi, tanggal_rilis)
+               VALUES (%s, %s, %s, %s, %s, %s)""",
+            [id_episode, podcast_id, episode_title, episode_description, episode_duration, tanggal_rilis]
+        )
         
-        return HttpResponse(b"CREATED", status=201)
- 
+        return Response({
+            'message': 'Episode created successfully',
+            'episode': {
+                'id': id_episode,
+                'judul': episode_title,
+                'deskripsi': episode_description,
+                'durasi': convert_duration(episode_duration),
+                'tanggal_rilis': tanggal_rilis
+            }
+        }, status=status.HTTP_201_CREATED)
+        
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    return HttpResponseNotFound()
-
-@connectdb
-@csrf_exempt
-def remove_episode(cursor: CursorWrapper, request):
-    if request.method == 'POST':
-        episode_id = request.POST.get("episode_id")
+@api_view(['DELETE'])
+@require_authentication
+def delete_episode(request, podcast_id, episode_id):
+    """Delete an episode"""
+    try:
+        email = request.session.get('email')
+        if not email:
+            return Response({'error': 'Not authenticated'}, status=status.HTTP_401_UNAUTHORIZED)
         
-        # Query SQL untuk menghapus data konten dari tabel konten
-        query = """
-        DELETE FROM EPISODE
-        WHERE id_episode = %s;
-        """
-
-        cursor.execute(query, (episode_id,))
+        # Check if user owns the podcast
+        podcast = execute_single_query(
+            "SELECT email_podcaster FROM PODCAST WHERE id_konten = %s",
+            [podcast_id]
+        )
         
+        if not podcast:
+            return Response({'error': 'Podcast not found'}, status=status.HTTP_404_NOT_FOUND)
         
-        return HttpResponse(b"DELETED", status=204)
+        if podcast['email_podcaster'] != email:
+            return Response({'error': 'Unauthorized to delete episodes'}, status=status.HTTP_403_FORBIDDEN)
+        
+        # Check if episode exists
+        episode = execute_single_query(
+            "SELECT id_episode FROM EPISODE WHERE id_episode = %s AND id_konten_podcast = %s",
+            [episode_id, podcast_id]
+        )
+        
+        if not episode:
+            return Response({'error': 'Episode not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Delete episode
+        execute_delete_query(
+            "DELETE FROM EPISODE WHERE id_episode = %s",
+            [episode_id]
+        )
+        
+        return Response({
+            'message': 'Episode deleted successfully'
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    return HttpResponseNotFound()
+@api_view(['GET'])
+@require_authentication
+def get_available_genres(request):
+    """Get available podcast genres"""
+    try:
+        genres = execute_query(
+            "SELECT DISTINCT genre FROM GENRE ORDER BY genre",
+            []
+        )
+        
+        return Response({
+            'genres': [genre['genre'] for genre in genres]
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

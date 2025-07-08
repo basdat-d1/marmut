@@ -1,9 +1,10 @@
 from django.urls import path
-from .views import (cek_royalti, cek_royalti_label)
+from . import views
 
 app_name = 'cek_royalti'
 
 urlpatterns = [
-    path('', cek_royalti, name='cek_royalti'),
-    path('label/', cek_royalti_label, name='cek_royalti_label'),
+    # REST API endpoints
+    path('', views.get_royalty_info, name='get_royalty_info_api'),
+    path('label/', views.get_label_royalty_info, name='get_label_royalty_info_api'),
 ]

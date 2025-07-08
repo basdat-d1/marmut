@@ -1,7 +1,13 @@
 from django.urls import path
 from . import views
 
+app_name = 'search_bar'
+
 urlpatterns = [
-    path('', views.search_view, name='search_view'),
-    path('detail/<uuid:item_id>/', views.detail_item_view, name='detail_item'),
+    # Feature 7: Search
+    path('', views.search, name='search'),
+    path('songs/', views.search_songs, name='search_songs'),
+    path('podcasts/', views.search_podcasts, name='search_podcasts'),
+    path('playlists/', views.search_playlists, name='search_playlists'),
+    path('item/<str:item_id>/', views.get_item_detail, name='item_detail'),
 ]

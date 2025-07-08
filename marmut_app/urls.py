@@ -16,29 +16,48 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import include, path
-from django.views.decorators.csrf import csrf_exempt
-from django.http import JsonResponse
-from django.middleware.csrf import get_token
-
-@csrf_exempt
-def get_csrf_token(request):
-    token = get_token(request)
-    return JsonResponse({'csrf_token': token})
+from authentication.views import get_csrf_token
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('get-csrf-token/', get_csrf_token, name='get_csrf_token'),
-    path('', include('authentication.urls')),
-    path('cek-royalti/', include('cek_royalti.urls')),
-    path('daftar-album-song/', include('daftar_album_song.urls')),
-    path('dashboard/', include('dashboard.urls')),
-    path('downloaded-songs/', include('downloaded_songs.urls')),
-    path('langganan-paket/', include('langganan_paket.urls')),
-    path('lihat-chart/', include('lihat_chart.urls')),
-    path('play-podcast/', include('play_podcast.urls')),
-    path('play-song/', include('play_song.urls')),
-    path('play-user-playlist/', include('play_user_playlist.urls')),
-    path('podcast/', include('podcast.urls')),
-    path('search-bar/', include('search_bar.urls')),
-    path('user-playlist/', include('user_playlist.urls')),
+    
+    # 1. Authentication & Registration (Features 2-3)
+    path('api/auth/', include('authentication.urls')),
+    
+    # 2. Dashboard (Feature 4)
+    path('api/dashboard/', include('dashboard.urls')),
+    
+    # 3. User Playlist Management (Feature 5)
+    path('api/user-playlist/', include('user_playlist.urls')),
+    
+    # 4. Subscription Management (Feature 6)
+    path('api/subscription/', include('langganan_paket.urls')),
+    
+    # 5. Search (Feature 7)
+    path('api/search/', include('search_bar.urls')),
+    
+    # 6. Play Song (Feature 8)
+    path('api/play-song/', include('play_song.urls')),
+    
+    # 7. Downloaded Songs (Feature 9)
+    path('api/downloads/', include('downloaded_songs.urls')),
+    
+    # 8. Play Podcast (Feature 10)
+    path('api/play-podcast/', include('play_podcast.urls')),
+    
+    # 9. Play User Playlist (Feature 11)
+    path('api/play-user-playlist/', include('play_user_playlist.urls')),
+    
+    # 10. Charts (Feature 12)
+    path('api/chart/', include('lihat_chart.urls')),
+    
+    # 11. Album & Song Management (Features 13 & 16)
+    path('api/album-song/', include('daftar_album_song.urls')),
+    
+    # 12. Royalty Check (Feature 14)
+    path('api/royalty/', include('cek_royalti.urls')),
+    
+    # 13. Podcast Management (Feature 15)
+    path('api/podcast/', include('podcast.urls')),
 ]

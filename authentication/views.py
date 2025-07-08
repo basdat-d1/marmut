@@ -1,300 +1,373 @@
+from django.http import JsonResponse
+from django.views.decorators.csrf import ensure_csrf_cookie
+from django.contrib.sessions.models import Session
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
+from utils.database import execute_query, fetch_one
+from utils.authentication import require_authentication, allow_any
 import uuid
-import random
-import datetime
-import re
-from django.contrib import messages
-from django.urls import reverse
-from django.shortcuts import redirect, render
-from django.views.decorators.csrf import csrf_exempt
-from django.db.backends.utils import CursorWrapper
-from django.http import HttpResponseRedirect
-from utils.query import connectdb
+from datetime import datetime, date
 
-def authentication(request):
-    return render(request, 'authentication.html')
+@ensure_csrf_cookie
+@api_view(['GET'])
+@allow_any
+def get_csrf_token(request):
+    """Get CSRF token for frontend authentication"""
+    return Response({'csrfToken': request.META.get('CSRF_COOKIE')})
 
-def register(request):
-    return render(request, 'register.html')
-
-@connectdb
-@csrf_exempt
-def register_pengguna(cursor: CursorWrapper, request):
-    if request.method == 'POST':
-        email = request.POST.get('email')
-        password = request.POST.get('password')
-        nama = request.POST.get('nama')
-        gender = request.POST.get('gender')
-        tempat_lahir = request.POST.get('tempat_lahir')
-        tanggal_lahir = request.POST.get('tanggal_lahir')
-        kota_asal = request.POST.get('kota_asal')
-        roles = request.POST.getlist('role')
-
-        # Validasi email
-        regex = re.compile(r'([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+')
-        if not re.fullmatch(regex, email):
-            messages.error(request, "Email tidak valid")
-            return render(request, 'registration_form/register_pengguna.html', {'form': request.POST})
-
-        # Cek kelengkapan data
-        if not email or not password or not nama or not gender or not tempat_lahir or not tanggal_lahir or not kota_asal:
-            messages.error(request, "Data yang diisikan belum lengkap")
-            return render(request, 'registration_form/register_pengguna.html', {'form': request.POST})
-
-        # Cek apakah email sudah ada di tabel AKUN atau LABEL
-        cursor.execute("SELECT * FROM AKUN WHERE email = %s", [email])
-        user = cursor.fetchone()
-        cursor.execute("SELECT * FROM LABEL WHERE email = %s", [email])
-        label = cursor.fetchone()
-
-        # Jika email sudah ada
-        if user or label:
-            messages.error(request, "Email sudah pernah didaftarkan.")
-            return render(request, 'registration_form/register_pengguna.html', {'form': request.POST})
-
-        # Cek panjang password minimal 8 karakter
-        if len(password) < 8:
-            messages.error(request, "Password minimal harus 8 karakter.")
-            return render(request, 'registration_form/register_pengguna.html', {'form': request.POST})
+@api_view(['POST'])
+@allow_any
+def login_user(request):
+    """
+    Feature 2: Login functionality
+    POST /api/auth/login/
+    """
+    try:
+        data = request.data
+        email = data.get('email')
+        password = data.get('password')
         
-        gender_info = 0 if gender == 'Perempuan' else 1
-        is_verified = bool(roles)
-
-        # Insert data ke tabel AKUN
-        cursor.execute(
-            """INSERT INTO AKUN(email, password, nama, gender, tempat_lahir, tanggal_lahir, is_verified, kota_asal) VALUES 
-                (%s, %s, %s, %s, %s, %s, %s, %s)""", 
-                (email, password, nama, gender_info, tempat_lahir, tanggal_lahir, is_verified, kota_asal)
-        )
-    
-        # Insert data ke tabel role yang sesuai
-        for role in roles:
-            if role == "Podcaster":
-                cursor.execute("INSERT INTO PODCASTER(email) VALUES (%s)", [email])
-            elif role == "Artist":
-                id_artist = str(uuid.uuid4())
-                id_pemilik_hak_cipta = str(uuid.uuid4())
-                rate_royalti = random.randint(500, 999)
-
-                cursor.execute("INSERT INTO PEMILIK_HAK_CIPTA(id, rate_royalti) VALUES (%s, %s)", [id_pemilik_hak_cipta, rate_royalti])
-                cursor.execute("INSERT INTO ARTIST(id, email_akun, id_pemilik_hak_cipta) VALUES (%s, %s, %s)",
-                                (id_artist, email, id_pemilik_hak_cipta))
-            elif role == "Songwriter":
-                id_songwriter = str(uuid.uuid4())
-                id_pemilik_hak_cipta = str(uuid.uuid4())
-                rate_royalti = random.randint(500, 999)
-
-                cursor.execute("INSERT INTO PEMILIK_HAK_CIPTA(id, rate_royalti) VALUES (%s, %s)", [id_pemilik_hak_cipta, rate_royalti])
-                cursor.execute("INSERT INTO SONGWRITER(id, email_akun, id_pemilik_hak_cipta) VALUES (%s, %s, %s)",
-                                (id_songwriter, email, id_pemilik_hak_cipta))
+        if not email or not password:
+            return Response({
+                'error': 'Email dan password harus diisi'
+            }, status=status.HTTP_400_BAD_REQUEST)
         
-        messages.success(request, 'Akun Anda telah berhasil dibuat!')
-        return redirect('authentication:login')
-
-    return render(request, 'registration_form/register_pengguna.html')
-
-@connectdb
-@csrf_exempt
-def register_label(cursor: CursorWrapper, request):
-    if request.method == 'POST':
-        email = request.POST.get('email')
-        password = request.POST.get('password')
-        nama = request.POST.get('nama')
-        kontak = request.POST.get('kontak')
-        id_label = str(uuid.uuid4())
-
-        # Validasi email
-        regex = re.compile(r'([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+')
-        if not re.fullmatch(regex, email):
-            messages.error(request, "Email tidak valid")
-            return render(request, 'registration_form/register_label.html', {'form': request.POST})
-
-        # Cek kelengkapan data
-        if not email or not password or not nama or not kontak:
-            messages.error(request, "Data yang diisikan belum lengkap")
-            return render(request, 'registration_form/register_label.html', {'form': request.POST})
-
-        # Cek apakah email sudah ada di tabel AKUN atau LABEL
-        cursor.execute("SELECT * FROM AKUN WHERE email = %s", [email])
-        user = cursor.fetchone()
-        cursor.execute("SELECT * FROM LABEL WHERE email = %s", [email])
-        label = cursor.fetchone()
-
-        # Jika email sudah ada
-        if user or label:
-            messages.error(request, "Email sudah pernah didaftarkan.")
-            return render(request, 'registration_form/register_label.html', {'form': request.POST})
+        # Check if user exists in AKUN table
+        user_query = """
+            SELECT email, password, nama, is_verified, kota_asal, gender, 
+                   tempat_lahir, tanggal_lahir
+            FROM AKUN 
+            WHERE email = %s AND password = %s
+        """
+        user = fetch_one(user_query, [email, password])
         
-        # Cek panjang password minimal 8 karakter
-        if len(password) < 8:
-            messages.error(request, "Password minimal harus 8 karakter.")
-            return render(request, 'registration_form/register_label.html', {'form': request.POST})
-
-        # Insert data ke tabel LABEL
-        cursor.execute('SELECT id FROM PEMILIK_HAK_CIPTA')
-        ids = cursor.fetchall()
-        id_pemilik_hak_cipta = str(random.choice(ids)[0])
-
-        cursor.execute(
-            """INSERT INTO LABEL(id, nama, email, password, kontak, id_pemilik_hak_cipta) VALUES 
-                (%s, %s, %s, %s, %s, %s)""", 
-                (id_label, nama, email, password, kontak, id_pemilik_hak_cipta)
-        )
+        if not user:
+            # Check if it's a label
+            label_query = """
+                SELECT email, password, nama, kontak
+                FROM LABEL 
+                WHERE email = %s AND password = %s
+            """
+            label = fetch_one(label_query, [email, password])
+            
+            if not label:
+                return Response({
+                    'error': 'Email atau password salah'
+                }, status=status.HTTP_401_UNAUTHORIZED)
+            
+            # Label login
+            request.session['user_email'] = label['email']
+            request.session['user_type'] = 'label'
+            request.session['user_name'] = label['nama']
+            
+            return Response({
+                'message': 'Login berhasil',
+                'user': {
+                    'email': label['email'],
+                    'nama': label['nama'],
+                    'is_label': True,
+                    'is_artist': False,
+                    'is_songwriter': False,
+                    'is_podcaster': False,
+                    'is_premium': False,
+                    'kontak': label['kontak']
+                }
+            })
         
-        messages.success(request, 'Akun Anda telah berhasil dibuat!')
-        return redirect('authentication:login')
+        # User login - determine roles
+        roles = []
         
-    return render(request, 'registration_form/register_label.html')
+        # Check if user is Artist
+        artist_query = "SELECT id FROM ARTIST WHERE email_akun = %s"
+        if fetch_one(artist_query, [email]):
+            roles.append('artist')
+        
+        # Check if user is Songwriter
+        songwriter_query = "SELECT id FROM SONGWRITER WHERE email_akun = %s"
+        if fetch_one(songwriter_query, [email]):
+            roles.append('songwriter')
+        
+        # Check if user is Podcaster
+        podcaster_query = "SELECT email FROM PODCASTER WHERE email = %s"
+        if fetch_one(podcaster_query, [email]):
+            roles.append('podcaster')
+        
+        # Default role is 'user' if no specific roles
+        if not roles:
+            roles = ['user']
+        
+        # Check premium status
+        premium_query = "SELECT email FROM PREMIUM WHERE email = %s"
+        is_premium = bool(fetch_one(premium_query, [email]))
+        
+        # Store session
+        request.session['user_email'] = user['email']
+        request.session['user_type'] = 'user'
+        request.session['user_name'] = user['nama']
+        request.session['user_roles'] = roles
+        request.session['is_premium'] = is_premium
+        
+        return Response({
+            'message': 'Login berhasil',
+            'user': {
+                'email': user['email'],
+                'nama': user['nama'],
+                'is_label': False,
+                'is_artist': 'artist' in roles,
+                'is_songwriter': 'songwriter' in roles,
+                'is_podcaster': 'podcaster' in roles,
+                'is_premium': is_premium,
+                'is_verified': user['is_verified'],
+                'kota_asal': user['kota_asal'],
+                'gender': user['gender'],
+                'tempat_lahir': user['tempat_lahir'],
+                'tanggal_lahir': user['tanggal_lahir'].isoformat() if user['tanggal_lahir'] else None
+            }
+        })
+        
+    except Exception as e:
+        return Response({
+            'error': f'Terjadi kesalahan: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-@connectdb
-@csrf_exempt
-def login(cursor: CursorWrapper, request):
-    context = {}
+@api_view(['POST'])
+@require_authentication
+def logout_user(request):
+    """
+    Feature 2: Logout functionality
+    POST /api/auth/logout/
+    """
+    try:
+        request.session.flush()
+        return Response({'message': 'Logout berhasil'})
+    except Exception as e:
+        return Response({
+            'error': f'Terjadi kesalahan: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    if request.method == 'POST':
-        email = request.POST.get('email')
-        password = request.POST.get('password')
+@api_view(['GET'])
+@require_authentication
+def current_user(request):
+    """
+    Get current user information
+    GET /api/auth/me/
+    """
+    try:
+        user_email = request.user_email
+        user_roles = request.user_roles
+        is_premium = request.is_premium
+        
+        # Check if user is a label
+        label_query = "SELECT email FROM LABEL WHERE email = %s"
+        is_label = bool(fetch_one(label_query, [user_email]))
+        
+        if is_label:
+            label_query = """
+                SELECT email, nama, kontak
+                FROM LABEL 
+                WHERE email = %s
+            """
+            label = fetch_one(label_query, [user_email])
+            
+            return Response({
+                'user': {
+                    'email': label['email'],
+                    'nama': label['nama'],
+                    'is_label': True,
+                    'is_artist': False,
+                    'is_songwriter': False,
+                    'is_podcaster': False,
+                    'is_premium': False,
+                    'kontak': label['kontak']
+                }
+            })
+        
+        # Regular user
+        user_query = """
+            SELECT email, nama, is_verified, kota_asal, gender, 
+                   tempat_lahir, tanggal_lahir
+            FROM AKUN 
+            WHERE email = %s
+        """
+        user = fetch_one(user_query, [user_email])
+        
+        if not user:
+            return Response({
+                'error': 'User tidak ditemukan'
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        return Response({
+            'user': {
+                'email': user['email'],
+                'nama': user['nama'],
+                'is_label': False,
+                'is_artist': 'artist' in user_roles,
+                'is_songwriter': 'songwriter' in user_roles,
+                'is_podcaster': 'podcaster' in user_roles,
+                'is_premium': is_premium,
+                'is_verified': user['is_verified'],
+                'kota_asal': user['kota_asal'],
+                'gender': user['gender'],
+                'tempat_lahir': user['tempat_lahir'],
+                'tanggal_lahir': user['tanggal_lahir'].isoformat() if user['tanggal_lahir'] else None
+            }
+        })
+        
+    except Exception as e:
+        return Response({
+            'error': f'Terjadi kesalahan: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        cursor.execute("SELECT * FROM AKUN WHERE email = %s AND password = %s", [email, password])
-        user = cursor.fetchone()
+@api_view(['POST'])
+@allow_any
+def register_user(request):
+    """
+    Feature 3: User Registration
+    POST /api/auth/register/user/
+    """
+    try:
+        data = request.data
+        
+        # Required fields
+        email = data.get('email')
+        password = data.get('password')
+        nama = data.get('nama')
+        gender = data.get('gender')
+        tempat_lahir = data.get('tempat_lahir')
+        tanggal_lahir = data.get('tanggal_lahir')
+        kota_asal = data.get('kota_asal')
+        roles = data.get('roles', [])
+        
+        # Validation
+        if not all([email, password, nama, gender is not None, tempat_lahir, tanggal_lahir, kota_asal]):
+            return Response({
+                'error': 'Semua field wajib diisi'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Check if email already exists
+        check_user_query = "SELECT email FROM AKUN WHERE email = %s"
+        existing_user = fetch_one(check_user_query, [email])
+        
+        if existing_user:
+            return Response({
+                'error': 'Email sudah terdaftar'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        check_label_query = "SELECT email FROM LABEL WHERE email = %s"
+        existing_label = fetch_one(check_label_query, [email])
+        
+        if existing_label:
+            return Response({
+                'error': 'Email sudah terdaftar sebagai label'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Determine verification status based on roles
+        is_verified = len(roles) > 0  # Verified if has specific roles
+        
+        # Insert into AKUN table
+        insert_user_query = """
+            INSERT INTO AKUN (email, password, nama, gender, tempat_lahir, tanggal_lahir, kota_asal, is_verified)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        """
+        execute_query(insert_user_query, [
+            email, password, nama, gender, tempat_lahir, 
+            tanggal_lahir, kota_asal, is_verified
+        ])
+        
+        # Add to NONPREMIUM by default
+        execute_query("INSERT INTO NONPREMIUM (email) VALUES (%s)", [email])
+        
+        # Handle roles
+        if 'artist' in roles:
+            # Create copyright owner first
+            copyright_id = str(uuid.uuid4())
+            execute_query("INSERT INTO PEMILIK_HAK_CIPTA (id, rate_royalti) VALUES (%s, %s)", [copyright_id, 50])
+            
+            artist_id = str(uuid.uuid4())
+            insert_artist_query = "INSERT INTO ARTIST (id, email_akun, id_pemilik_hak_cipta) VALUES (%s, %s, %s)"
+            execute_query(insert_artist_query, [artist_id, email, copyright_id])
+        
+        if 'songwriter' in roles:
+            # Create copyright owner first
+            copyright_id = str(uuid.uuid4())
+            execute_query("INSERT INTO PEMILIK_HAK_CIPTA (id, rate_royalti) VALUES (%s, %s)", [copyright_id, 50])
+            
+            songwriter_id = str(uuid.uuid4())
+            insert_songwriter_query = "INSERT INTO SONGWRITER (id, email_akun, id_pemilik_hak_cipta) VALUES (%s, %s, %s)"
+            execute_query(insert_songwriter_query, [songwriter_id, email, copyright_id])
+        
+        if 'podcaster' in roles:
+            insert_podcaster_query = "INSERT INTO PODCASTER (email) VALUES (%s)"
+            execute_query(insert_podcaster_query, [email])
+        
+        return Response({
+            'message': 'Registrasi berhasil'
+        }, status=status.HTTP_201_CREATED)
+        
+    except Exception as e:
+        return Response({
+            'error': f'Terjadi kesalahan: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        cursor.execute("SELECT * FROM LABEL WHERE email = %s AND password = %s", [email, password])
-        label = cursor.fetchone()
-
-        # Kalo email atau password salah
-        if not user and not label:
-            context["message"] = "Email atau password salah"
-            return render(request, "login.html", context)
-
-        # Jika password benar
-        if user and user[1] == password:
-            return handle_pengguna_login(cursor, request, user)
-        elif label and label[3] == password:
-            return handle_label_login(cursor, request, label)
-
-    return render(request, 'login.html', context)
-
-def handle_pengguna_login(cursor: CursorWrapper, request, user):
-    email = user[0]
-    gender = user[3]
-    is_artist, is_songwriter, is_podcaster, is_premium = False, False, False, False
-
-    records_song_artist, records_song_songwriter, records_podcast = [], [], []
-
-    # Fetch data pengguna
-    id_artist, id_songwriter, id_pemilik_hak_cipta_artist, id_pemilik_hak_cipta_songwriter = fetch_user_data(cursor, email, records_song_artist, records_song_songwriter, records_podcast)
-
-    # Cek apakah user podcaster
-    cursor.execute("SELECT * FROM PODCASTER WHERE email = %s", [email])
-    podcaster = cursor.fetchone()
-    if podcaster:
-        is_podcaster = True
-
-    # Cek apakah user artist
-    cursor.execute("SELECT * FROM ARTIST WHERE email_akun = %s", [email])
-    artist = cursor.fetchone()
-    if artist:
-        is_artist = True
-
-    # Cek apakah user songwriter
-    cursor.execute("SELECT * FROM SONGWRITER WHERE email_akun = %s", [email])
-    songwriter = cursor.fetchone()
-    if songwriter:
-        is_songwriter = True
-
-    # Cek apakah user premium
-    if check_premium(cursor, email):
-        is_premium = True
-
-    request.session["email"] = email
-    request.session["role"] = 'pengguna'
-    request.session["gender"] = gender
-    request.session["is_premium"] = is_premium
-    request.session["is_artist"] = is_artist
-    request.session["is_songwriter"] = is_songwriter
-    request.session["is_podcaster"] = is_podcaster
-    request.session["id_artist"] = str(id_artist)
-    request.session["id_songwriter"] = str(id_songwriter)
-    request.session["id_pemilik_hak_cipta_artist"] = str(id_pemilik_hak_cipta_artist)
-    request.session["id_pemilik_hak_cipta_songwriter"] = str(id_pemilik_hak_cipta_songwriter)
-    request.session['last_login'] = str(datetime.datetime.now())
-
-    return HttpResponseRedirect(reverse('dashboard:dashboard_pengguna'))
-
-def handle_label_login(cursor: CursorWrapper, request, label):
-    email = label[2]
-    id_label = label[0]
-
-    request.session["email"] = email
-    request.session["role"] = 'label'
-    request.session["id_label"] = str(id_label)
-    request.session["id_pemilik_hak_cipta_label"] = str(label[5])
-
-    return HttpResponseRedirect(reverse('dashboard:dashboard_label'))
-
-def fetch_user_data(cursor: CursorWrapper, email, records_song_artist, records_song_songwriter, records_podcast):
-    id_artist, id_songwriter, id_pemilik_hak_cipta_artist, id_pemilik_hak_cipta_songwriter = "", "", "", ""
-
-    # Fetch data artist
-    cursor.execute("SELECT * FROM ARTIST WHERE email_akun = %s", [email])
-    artist = cursor.fetchone()
-    if artist:
-        id_artist = artist[0]
-        id_pemilik_hak_cipta_artist = artist[2]
-        cursor.execute("SELECT * FROM SONG WHERE id_artist = %s", [id_artist])
-        artist_songs = cursor.fetchall()
-        for song in artist_songs:
-            id_song = song[0]
-            cursor.execute("SELECT judul, durasi FROM KONTEN WHERE id = %s", [id_song])
-            additional_detail_song = cursor.fetchone()
-            if additional_detail_song:
-                records_song_artist.append(song + additional_detail_song)
-
-    # Fetch data songwriter
-    cursor.execute("SELECT * FROM SONGWRITER WHERE email_akun = %s", [email])
-    songwriter = cursor.fetchone()
-    if songwriter:
-        id_songwriter = songwriter[0]
-        id_pemilik_hak_cipta_songwriter = songwriter[2]
-        cursor.execute("SELECT id_song FROM SONGWRITER_WRITE_SONG WHERE id_songwriter = %s", [id_songwriter])
-        list_id_song = cursor.fetchall()
-        for song in list_id_song:
-            id_song = song[0]
-            cursor.execute("SELECT * FROM SONG WHERE id_konten = %s", [id_song])
-            records_song_awal = cursor.fetchone()
-            cursor.execute("SELECT judul, durasi FROM KONTEN WHERE id = %s", [id_song])
-            additional_detail_song = cursor.fetchone()
-            if records_song_awal and additional_detail_song:
-                records_song_songwriter.append(records_song_awal + additional_detail_song)
-
-    # Fetch data podcaster
-    cursor.execute("SELECT * FROM PODCASTER WHERE email = %s", [email])
-    podcaster = cursor.fetchone()
-    if podcaster:
-        cursor.execute("SELECT * FROM PODCAST WHERE email_podcaster = %s", [email])
-        list_id_podcast = cursor.fetchall()
-        for podcast in list_id_podcast:
-            id_podcast = podcast[0]
-            cursor.execute("""
-                SELECT k.id, k.judul, COUNT(*) AS jumlah_episode, k.durasi 
-                FROM KONTEN AS k 
-                JOIN EPISODE AS e ON e.id_konten_podcast = k.id 
-                WHERE k.id = %s 
-                GROUP BY k.id
-            """, [id_podcast])
-            records_podcast.append(cursor.fetchone())
-
-    return id_artist, id_songwriter, id_pemilik_hak_cipta_artist, id_pemilik_hak_cipta_songwriter
-
-def fetch_user_playlist(cursor: CursorWrapper, email):
-    cursor.execute("SELECT * FROM USER_PLAYLIST WHERE email_pembuat = %s", [email])
-    return cursor.fetchall()
-
-def check_premium(cursor: CursorWrapper, email):
-    cursor.execute("SELECT * FROM PREMIUM WHERE email = %s", [email])
-    return bool(cursor.fetchone())
-
-@csrf_exempt
-def logout(request):
-    request.session.flush()
-    request.session.clear_expired()
-    return HttpResponseRedirect(reverse('authentication:authentication'))
+@api_view(['POST'])
+@allow_any
+def register_label(request):
+    """
+    Feature 3: Label Registration
+    POST /api/auth/register/label/
+    """
+    try:
+        data = request.data
+        
+        # Required fields
+        email = data.get('email')
+        password = data.get('password')
+        nama = data.get('nama')
+        kontak = data.get('kontak')
+        
+        # Validation
+        if not all([email, password, nama, kontak]):
+            return Response({
+                'error': 'Semua field wajib diisi'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Check if email already exists
+        check_user_query = "SELECT email FROM AKUN WHERE email = %s"
+        existing_user = fetch_one(check_user_query, [email])
+        
+        if existing_user:
+            return Response({
+                'error': 'Email sudah terdaftar sebagai user'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        check_label_query = "SELECT email FROM LABEL WHERE email = %s"
+        existing_label = fetch_one(check_label_query, [email])
+        
+        if existing_label:
+            return Response({
+                'error': 'Email sudah terdaftar'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Generate label ID and copyright owner
+        label_id = str(uuid.uuid4())
+        copyright_id = str(uuid.uuid4())
+        
+        # Create copyright owner first
+        execute_query("INSERT INTO PEMILIK_HAK_CIPTA (id, rate_royalti) VALUES (%s, %s)", [copyright_id, 75])
+        
+        # Insert into LABEL table
+        insert_label_query = """
+            INSERT INTO LABEL (id, nama, email, password, kontak, id_pemilik_hak_cipta)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """
+        execute_query(insert_label_query, [label_id, nama, email, password, kontak, copyright_id])
+        
+        return Response({
+            'message': 'Registrasi label berhasil'
+        }, status=status.HTTP_201_CREATED)
+        
+    except Exception as e:
+        return Response({
+            'error': f'Terjadi kesalahan: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

@@ -1,13 +1,15 @@
 from django.urls import path
-from podcast.views import *
+from . import views
 
 app_name = 'podcast'
 
 urlpatterns = [
-    path('', daftar_podcast, name='daftar_podcast'),
-    path('daftar-episode/', daftar_episode, name='daftar_episode'),
-    path('add-podcast/', add_podcast, name='add_podcast'),    
-    path('remove-podcast/', remove_podcast, name='remove_podcast'), 
-    path('add-episode/', add_episode, name='add_episode'),     
-    path('remove-episode/', remove_episode, name='remove_episode'),       
+    # REST API endpoints
+    path('', views.get_user_podcasts, name='get_user_podcasts_api'),
+    path('create/', views.create_podcast, name='create_podcast_api'),
+    path('<str:podcast_id>/delete/', views.delete_podcast, name='delete_podcast_api'),
+    path('<str:podcast_id>/episodes/', views.get_podcast_episodes, name='get_podcast_episodes_api'),
+    path('<str:podcast_id>/episodes/create/', views.create_episode, name='create_episode_api'),
+    path('<str:podcast_id>/episodes/<str:episode_id>/delete/', views.delete_episode, name='delete_episode_api'),
+    path('genres/', views.get_available_genres, name='get_available_genres_api'),
 ]

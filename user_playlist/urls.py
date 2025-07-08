@@ -1,15 +1,15 @@
 from django.urls import path
-from .views import (user_playlist, tambah_playlist, ubah_playlist, hapus_playlist, detail_playlist, 
-                    tambah_lagu_playlist, hapus_lagu_playlist)
+from . import views
 
 app_name = 'user_playlist'
 
 urlpatterns = [
-    path('', user_playlist, name='user_playlist'),
-    path('tambah_playlist/', tambah_playlist, name='tambah_playlist'),
-    path('ubah_playlist/<str:id_user_playlist>/', ubah_playlist, name='ubah_playlist'),
-    path('hapus_playlist/<str:id_user_playlist>/', hapus_playlist, name='hapus_playlist'),
-    path('detail_playlist/<str:id_user_playlist>/', detail_playlist, name='detail_playlist'),
-    path('tambah_lagu/<str:id_user_playlist>/', tambah_lagu_playlist, name='tambah_lagu_playlist'),
-    path('hapus_lagu/<str:id_user_playlist>/<str:id_song>/', hapus_lagu_playlist, name='hapus_lagu_playlist'),
+    # REST API endpoints
+    path('', views.get_user_playlists, name='get_user_playlists_api'),
+    path('create/', views.create_playlist, name='create_playlist_api'),
+    path('<str:playlist_id>/', views.get_playlist_detail, name='get_playlist_detail_api'),
+    path('<str:playlist_id>/update/', views.update_playlist, name='update_playlist_api'),
+    path('<str:playlist_id>/delete/', views.delete_playlist, name='delete_playlist_api'),
+    path('<str:playlist_id>/add-song/', views.add_song_to_playlist, name='add_song_to_playlist_api'),
+    path('<str:playlist_id>/remove-song/<str:song_id>/', views.remove_song_from_playlist, name='remove_song_from_playlist_api'),
 ]

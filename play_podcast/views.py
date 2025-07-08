@@ -1,74 +1,154 @@
-from django.shortcuts import render
-from utils.query import connectdb
-from django.urls import reverse
-from django.http import HttpResponseRedirect
-from django.db.backends.utils import CursorWrapper
+from datetime import datetime
+from rest_framework import status
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from utils.authentication import require_authentication
+from utils.database import execute_query, execute_single_query, execute_insert_query
 
 def convert_duration(minutes):
+    """Convert minutes to format: _ jam _ menit"""
     hours = minutes // 60
     mins = minutes % 60
     if hours > 0 and mins > 0:
-        return f"{hours} hour {mins} minutes"
+        return f"{hours} jam {mins} menit"
     elif hours > 0:
-        return f"{hours} hour"
+        return f"{hours} jam"
     else:
-        return f"{mins} minutes"
+        return f"{mins} menit"
 
-@connectdb
-def show_podcast(cursor: CursorWrapper, request):
-    podcastID = request.GET.get("podcast_id")
-    is_podcaster = request.session.get('is_podcaster')
-    is_artist = request.session.get('is_artist')
-    is_songwriter = request.session.get('is_songwriter')
-    status_langganan = request.session.get('is_premium')
-    
-    query = """
-    SELECT p.id_konten AS podcast_id, k.judul AS podcast_title, k.durasi AS total_duration,
-           e.id_episode, e.judul AS episode_title, e.deskripsi, e.durasi AS episode_duration, e.tanggal_rilis AS episode_release_date,
-           g.genre, a.nama AS podcaster_name, k.tanggal_rilis AS podcast_release_date
+@api_view(['GET'])
+@require_authentication
+def get_podcast_detail(request, podcast_id):
+    """Get podcast details with episodes"""
+    try:
+        # Get podcast details
+        podcast = execute_single_query(
+            """SELECT p.id_konten, k.judul, k.durasi, k.tanggal_rilis,
+                      ak.nama as podcaster_name, po.email as podcaster_email
+               FROM PODCAST p
+               JOIN KONTEN k ON p.id_konten = k.id
+               JOIN PODCASTER po ON p.email_podcaster = po.email
+               JOIN AKUN ak ON po.email = ak.email
+               WHERE p.id_konten = %s""",
+            [podcast_id]
+        )
+        
+        if not podcast:
+            return Response({'error': 'Podcast not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Get podcast episodes
+        episodes = execute_query(
+            """SELECT e.id_episode, e.judul, e.deskripsi, e.durasi, e.tanggal_rilis
+               FROM EPISODE e
+               WHERE e.id_konten_podcast = %s
+               ORDER BY e.tanggal_rilis DESC""",
+            [podcast_id]
+        )
+        
+        # Get podcast genres
+        genres = execute_query(
+            """SELECT g.genre
+               FROM GENRE g
+               WHERE g.id_konten = %s""",
+            [podcast_id]
+        )
+        
+        return Response({
+            'podcast': {
+                'id': podcast['id_konten'],
+                'judul': podcast['judul'],
+                'total_durasi': convert_duration(podcast['durasi']),
+                'tanggal_rilis': podcast['tanggal_rilis'],
+                'podcaster': podcast['podcaster_name'],
+                'podcaster_email': podcast['podcaster_email'],
+                'genres': [genre['genre'] for genre in genres]
+            },
+            'episodes': [
+                {
+                    'id': episode['id_episode'],
+                    'judul': episode['judul'],
+                    'deskripsi': episode['deskripsi'],
+                    'durasi': convert_duration(episode['durasi']),
+                    'tanggal_rilis': episode['tanggal_rilis']
+                } for episode in episodes
+            ]
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+@require_authentication
+def play_podcast_episode(request, podcast_id, episode_id):
+    """Play a specific podcast episode"""
+    try:
+        email = request.session.get('email')
+        if not email:
+            return Response({'error': 'Not authenticated'}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        # Verify episode exists
+        episode = execute_single_query(
+            """SELECT e.id_episode, e.judul, e.durasi
+               FROM EPISODE e
+               WHERE e.id_episode = %s AND e.id_konten_podcast = %s""",
+            [episode_id, podcast_id]
+        )
+        
+        if not episode:
+            return Response({'error': 'Episode not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Record episode play
+        timestamp = datetime.now()
+        execute_insert_query(
+            """INSERT INTO AKUN_PLAY_EPISODE (email_pemain, id_episode, waktu)
+               VALUES (%s, %s, %s)""",
+            [email, episode_id, timestamp]
+        )
+        
+        return Response({
+            'message': 'Episode played successfully',
+            'episode': {
+                'id': episode['id_episode'],
+                'judul': episode['judul'],
+                'durasi': convert_duration(episode['durasi'])
+            },
+            'timestamp': timestamp
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['GET'])
+@require_authentication
+def get_all_podcasts(request):
+    """Get all podcasts"""
+    try:
+        podcasts = execute_query(
+            """SELECT p.id_konten, k.judul, k.durasi, k.tanggal_rilis,
+                      ak.nama as podcaster_name,
+                      COUNT(e.id_episode) as episode_count
     FROM PODCAST p
     JOIN KONTEN k ON p.id_konten = k.id
+               JOIN PODCASTER po ON p.email_podcaster = po.email
+               JOIN AKUN ak ON po.email = ak.email
     LEFT JOIN EPISODE e ON p.id_konten = e.id_konten_podcast
-    LEFT JOIN GENRE g ON k.id = g.id_konten
-    LEFT JOIN PODCASTER po ON p.email_podcaster = po.email
-    LEFT JOIN AKUN a ON po.email = a.email
-    WHERE k.id = %s
-    ORDER BY k.judul, e.tanggal_rilis;
-    """
-    cursor.execute(query, (podcastID,))
-    rows = cursor.fetchall()
-
-    podcasts_dict = {}
-    for row in rows:
-        podcast_id = row[0]
-        if podcast_id not in podcasts_dict:
-            podcasts_dict[podcast_id] = {
-                "title": row[1],
-                "total_duration": convert_duration(row[2]),
-                "podcast_release_date": row[10],  # Menambahkan tanggal rilis podcast
-                "episodes": [],
-                "genres": set(),
-                "podcaster": row[9]
-            }
-        if row[3]: 
-            podcasts_dict[podcast_id]["episodes"].append({
-                "judul": row[4],
-                "deskripsi": row[5],
-                "durasi_episode": convert_duration(row[6]),
-                "tanggal_episode": row[7]
-            })
-        if row[8]:
-            podcasts_dict[podcast_id]["genres"].add(row[8])
-
-    for podcast_id in podcasts_dict:
-        podcasts_dict[podcast_id]["genres"] = ", ".join(podcasts_dict[podcast_id]["genres"])
-
-    content = {
-        "podcasts": list(podcasts_dict.values()),
-        'status_langganan': status_langganan,
-        'isArtist': is_artist,
-        'isSongwriter': is_songwriter,
-        'isPodcaster': is_podcaster,
-    }
-    
-    return render(request, 'play_podcast.html', content)
+               GROUP BY p.id_konten, k.judul, k.durasi, k.tanggal_rilis, ak.nama
+               ORDER BY k.tanggal_rilis DESC""",
+            []
+        )
+        
+        return Response({
+            'podcasts': [
+                {
+                    'id': podcast['id_konten'],
+                    'judul': podcast['judul'],
+                    'podcaster': podcast['podcaster_name'],
+                    'total_durasi': convert_duration(podcast['durasi']),
+                    'episode_count': podcast['episode_count'],
+                    'tanggal_rilis': podcast['tanggal_rilis']
+                } for podcast in podcasts
+            ]
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

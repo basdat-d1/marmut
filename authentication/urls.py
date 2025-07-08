@@ -1,15 +1,18 @@
 from django.urls import path
-
-from dashboard.views import dashboard_pengguna
-from .views import (authentication, register, login,
-                    register_pengguna, register_label)
+from . import views
 
 app_name = 'authentication'
 
 urlpatterns = [
-    path('', authentication, name='authentication'),
-    path('register/', register, name='register'),
-    path('register/pengguna/', register_pengguna, name='register_pengguna'),
-    path('register/label/', register_label, name='register_label'),
-    path('login/', login, name='login'),
+    # Feature 2: Login and Logout
+    path('login/', views.login_user, name='login'),
+    path('logout/', views.logout_user, name='logout'),
+    path('me/', views.current_user, name='current_user'),
+    
+    # Feature 3: Registration
+    path('register/user/', views.register_user, name='register_user'),
+    path('register/label/', views.register_label, name='register_label'),
+    
+    # CSRF Token
+    path('csrf-token/', views.get_csrf_token, name='csrf_token'),
 ]

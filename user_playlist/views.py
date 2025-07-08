@@ -1,12 +1,10 @@
 import uuid
-from django.urls import reverse
-from django.shortcuts import render, redirect
-from django.views.decorators.csrf import csrf_exempt
-from django.contrib import messages
 from datetime import date
-from django.http import HttpResponseRedirect
-from django.db.backends.utils import CursorWrapper
-from utils.query import connectdb
+from rest_framework import status
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from utils.database import execute_query, execute_single_query, execute_insert_query, execute_delete_query, execute_update_query
+from utils.authentication import require_authentication
 
 def convert_duration(total_minutes):
     hours = total_minutes // 60
@@ -17,169 +15,301 @@ def convert_duration(total_minutes):
     else:
         return f"{minutes} menit"
 
-@connectdb
-@csrf_exempt
-def user_playlist(cursor: CursorWrapper, request):
-    email_pembuat = request.session.get('email')
-
-    cursor.execute("""
-        SELECT id_user_playlist, judul, jumlah_lagu, total_durasi
+@api_view(['GET'])
+@require_authentication
+def get_user_playlists(request):
+    """Get all user playlists"""
+    try:
+        email = request.user_email
+        
+        playlists = execute_query(
+            """SELECT id_user_playlist, judul, deskripsi, jumlah_lagu, total_durasi, tanggal_dibuat
         FROM USER_PLAYLIST
-        WHERE email_pembuat = %s;
-    """, [email_pembuat])
-    playlists = cursor.fetchall()
+               WHERE email_pembuat = %s
+               ORDER BY tanggal_dibuat DESC""",
+            [email]
+        )
+        
+        return Response({
+            'playlists': [
+                {
+                    'id': playlist['id_user_playlist'],
+                    'judul': playlist['judul'],
+                    'deskripsi': playlist['deskripsi'],
+                    'jumlah_lagu': playlist['jumlah_lagu'],
+                    'total_durasi': convert_duration(playlist['total_durasi']),
+                    'tanggal_dibuat': playlist['tanggal_dibuat']
+                } for playlist in playlists
+            ]
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    playlist_data = [{
-        'id': playlist[0],
-        'judul': playlist[1],
-        'jumlah_lagu': playlist[2],
-        'total_durasi': convert_duration(playlist[3])
-    } for playlist in playlists]
-
-    return render(request, "user_playlist.html", {'playlists': playlist_data})
-
-@connectdb
-@csrf_exempt
-def tambah_playlist(cursor: CursorWrapper, request):
-    if request.method == 'POST':
-        judul = request.POST.get('judul')
-        deskripsi = request.POST.get('deskripsi')
-        email_pembuat = request.session.get('email')
-
+@api_view(['POST'])
+@require_authentication
+def create_playlist(request):
+    """Create a new playlist"""
+    try:
+        email = request.user_email
+        
+        data = request.data
+        judul = data.get('judul')
+        deskripsi = data.get('deskripsi', '')
+        
+        if not judul:
+            return Response({'error': 'Judul playlist harus diisi'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Generate UUIDs
         id_user_playlist = str(uuid.uuid4())
         id_playlist = str(uuid.uuid4())
         tanggal_dibuat = date.today()
 
-        cursor.execute("INSERT INTO PLAYLIST (id) VALUES (%s)", [id_playlist])
-        cursor.execute("""
-            INSERT INTO USER_PLAYLIST (email_pembuat, id_user_playlist, judul, deskripsi, jumlah_lagu, tanggal_dibuat, id_playlist, total_durasi)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-        """, [email_pembuat, id_user_playlist, judul, deskripsi, 0, tanggal_dibuat, id_playlist, 0])
+        # Insert into PLAYLIST table first
+        execute_query("INSERT INTO PLAYLIST (id) VALUES (%s)", [id_playlist])
+        
+        # Insert into USER_PLAYLIST table
+        execute_query(
+            """INSERT INTO USER_PLAYLIST (email_pembuat, id_user_playlist, judul, deskripsi, 
+                                          jumlah_lagu, tanggal_dibuat, id_playlist, total_durasi)
+               VALUES (%s, %s, %s, %s, %s, %s, %s, %s)""",
+            [email, id_user_playlist, judul, deskripsi, 0, tanggal_dibuat, id_playlist, 0]
+        )
+        
+        return Response({
+            'message': 'Playlist berhasil dibuat',
+            'playlist': {
+                'id': id_user_playlist,
+                'judul': judul,
+                'deskripsi': deskripsi,
+                'jumlah_lagu': 0,
+                'total_durasi': '0 menit',
+                'tanggal_dibuat': tanggal_dibuat
+            }
+        }, status=status.HTTP_201_CREATED)
+        
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        return HttpResponseRedirect(reverse('user_playlist:user_playlist'))
+@api_view(['GET'])
+@require_authentication
+def get_playlist_detail(request, playlist_id):
+    """Get playlist details with songs"""
+    try:
+        email = request.user_email
+        
+        # Get playlist info
+        playlist = execute_single_query(
+            """SELECT up.id_user_playlist, up.judul, up.deskripsi, up.tanggal_dibuat, 
+                      up.jumlah_lagu, up.total_durasi, up.email_pembuat, up.id_playlist
+               FROM USER_PLAYLIST up
+               WHERE up.id_user_playlist = %s""",
+            [playlist_id]
+        )
+        
+        if not playlist:
+            return Response({'error': 'Playlist not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Get playlist songs
+        songs = execute_query(
+            """SELECT k.id, k.judul, ak.nama as artist, k.durasi, a.judul as album
+               FROM PLAYLIST_SONG ps
+               JOIN SONG s ON ps.id_song = s.id_konten
+               JOIN KONTEN k ON s.id_konten = k.id
+               JOIN ARTIST ar ON s.id_artist = ar.id
+               JOIN AKUN ak ON ar.email_akun = ak.email
+               JOIN ALBUM a ON s.id_album = a.id
+               WHERE ps.id_playlist = %s
+               ORDER BY k.judul""",
+            [playlist['id_playlist']]
+        )
+        
+        return Response({
+            'playlist': {
+                'id': playlist['id_user_playlist'],
+                'judul': playlist['judul'],
+                'deskripsi': playlist['deskripsi'],
+                'jumlah_lagu': playlist['jumlah_lagu'],
+                'total_durasi': convert_duration(playlist['total_durasi']),
+                'tanggal_dibuat': playlist['tanggal_dibuat'],
+                'email_pembuat': playlist['email_pembuat']
+            },
+            'songs': [
+                {
+                    'id': song['id'],
+                    'judul': song['judul'],
+                    'artist': song['artist'],
+                    'album': song['album'],
+                    'durasi': convert_duration(song['durasi'])
+                } for song in songs
+            ]
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    return render(request, 'tambah_playlist.html')
-
-@connectdb
-@csrf_exempt
-def ubah_playlist(cursor: CursorWrapper, request, id_user_playlist):
-    if request.method == 'POST':
-        judul = request.POST.get('judul')
-        deskripsi = request.POST.get('deskripsi')
-
-        cursor.execute("""
-            UPDATE USER_PLAYLIST
+@api_view(['PUT'])
+@require_authentication
+def update_playlist(request, playlist_id):
+    """Update playlist details"""
+    try:
+        email = request.user_email
+        
+        # Check if playlist exists and belongs to user
+        playlist = execute_single_query(
+            "SELECT email_pembuat FROM USER_PLAYLIST WHERE id_user_playlist = %s",
+            [playlist_id]
+        )
+        
+        if not playlist:
+            return Response({'error': 'Playlist not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        if playlist['email_pembuat'] != email:
+            return Response({'error': 'Unauthorized to modify this playlist'}, status=status.HTTP_403_FORBIDDEN)
+        
+        data = request.data
+        judul = data.get('judul')
+        deskripsi = data.get('deskripsi', '')
+        
+        if not judul:
+            return Response({'error': 'Judul playlist harus diisi'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Update playlist
+        execute_update_query(
+            """UPDATE USER_PLAYLIST 
             SET judul = %s, deskripsi = %s
-            WHERE id_user_playlist = %s;
-        """, [judul, deskripsi, id_user_playlist])
-        messages.success(request, 'Playlist berhasil diubah.')
-        return HttpResponseRedirect(reverse('user_playlist:user_playlist'))
+               WHERE id_user_playlist = %s""",
+            [judul, deskripsi, playlist_id]
+        )
+        
+        return Response({
+            'message': 'Playlist berhasil diperbarui',
+            'playlist': {
+                'id': playlist_id,
+                'judul': judul,
+                'deskripsi': deskripsi
+            }
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    cursor.execute("""
-        SELECT judul, deskripsi
-        FROM USER_PLAYLIST
-        WHERE id_user_playlist = %s;
-    """, [id_user_playlist])
-    playlist = cursor.fetchone()
+@api_view(['DELETE'])
+@require_authentication
+def delete_playlist(request, playlist_id):
+    """Delete a playlist"""
+    try:
+        email = request.user_email
+        
+        # Check if playlist exists and belongs to user
+        playlist = execute_single_query(
+            "SELECT email_pembuat FROM USER_PLAYLIST WHERE id_user_playlist = %s",
+            [playlist_id]
+        )
+        
+        if not playlist:
+            return Response({'error': 'Playlist not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        if playlist['email_pembuat'] != email:
+            return Response({'error': 'Unauthorized to delete this playlist'}, status=status.HTTP_403_FORBIDDEN)
+        
+        # Delete playlist (cascade will handle related records)
+        execute_delete_query(
+            "DELETE FROM USER_PLAYLIST WHERE id_user_playlist = %s",
+            [playlist_id]
+        )
+        
+        return Response({
+            'message': 'Playlist berhasil dihapus'
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    return render(request, 'ubah_playlist.html', {'playlist': {'id': id_user_playlist, 'judul': playlist[0], 'deskripsi': playlist[1]}})
+@api_view(['POST'])
+@require_authentication
+def add_song_to_playlist(request, playlist_id):
+    """Add a song to playlist"""
+    try:
+        email = request.user_email
+        
+        # Check if playlist exists and belongs to user
+        playlist = execute_single_query(
+            "SELECT email_pembuat, id_playlist FROM USER_PLAYLIST WHERE id_user_playlist = %s",
+            [playlist_id]
+        )
+        
+        if not playlist:
+            return Response({'error': 'Playlist not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        if playlist['email_pembuat'] != email:
+            return Response({'error': 'Unauthorized to modify this playlist'}, status=status.HTTP_403_FORBIDDEN)
+        
+        data = request.data
+        song_id = data.get('song_id')
+        
+        if not song_id:
+            return Response({'error': 'Song ID harus diisi'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Check if song exists
+        song = execute_single_query(
+            "SELECT id FROM KONTEN WHERE id = %s",
+            [song_id]
+        )
+        
+        if not song:
+            return Response({'error': 'Song not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Check if song already in playlist
+        existing = execute_single_query(
+            "SELECT id_playlist FROM PLAYLIST_SONG WHERE id_playlist = %s AND id_song = %s",
+            [playlist['id_playlist'], song_id]
+        )
+        
+        if existing:
+            return Response({'error': 'Song already in playlist'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Add song to playlist
+        execute_query(
+            "INSERT INTO PLAYLIST_SONG (id_playlist, id_song) VALUES (%s, %s)",
+            [playlist['id_playlist'], song_id]
+        )
+        
+        return Response({
+            'message': 'Lagu berhasil ditambahkan ke playlist'
+        }, status=status.HTTP_201_CREATED)
+        
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-@connectdb
-@csrf_exempt
-def hapus_playlist(cursor: CursorWrapper, request, id_user_playlist):
-    cursor.execute("""
-        DELETE FROM USER_PLAYLIST
-        WHERE id_user_playlist = %s;
-    """, [id_user_playlist])
-
-    return HttpResponseRedirect(reverse('user_playlist:user_playlist'))
-
-@connectdb
-@csrf_exempt
-def detail_playlist(cursor: CursorWrapper, request, id_user_playlist):
-    cursor.execute("""
-        SELECT UP.judul, UP.deskripsi, UP.jumlah_lagu, UP.total_durasi, UP.tanggal_dibuat, A.nama as pembuat
-        FROM USER_PLAYLIST UP
-        JOIN AKUN A ON UP.email_pembuat = A.email
-        WHERE UP.id_user_playlist = %s;
-    """, [id_user_playlist])
-    playlist = cursor.fetchone()
-
-    cursor.execute("""
-        SELECT K.id, K.judul, AK.nama, K.durasi
-        FROM PLAYLIST_SONG PS
-        JOIN KONTEN K ON PS.id_song = K.id
-        JOIN SONG S ON K.id = S.id_konten
-        JOIN ARTIST AR ON S.id_artist = AR.id
-        JOIN AKUN AK ON AR.email_akun = AK.email
-        JOIN USER_PLAYLIST UP ON PS.id_playlist = UP.id_playlist
-        WHERE UP.id_user_playlist = %s;
-    """, [id_user_playlist])
-    songs = cursor.fetchall()
-
-    return render(request, 'detail_playlist.html', {
-        'playlist': {
-            'judul': playlist[0],
-            'deskripsi': playlist[1],
-            'jumlah_lagu': playlist[2],
-            'total_durasi': convert_duration(playlist[3]),
-            'tanggal_dibuat': playlist[4],
-            'pembuat': playlist[5]
-        },
-        'songs': [{
-            'id': song[0],
-            'judul': song[1],
-            'nama': song[2],
-            'durasi': convert_duration(song[3])
-        } for song in songs],
-        'id_user_playlist': id_user_playlist
-    })
-
-@connectdb
-@csrf_exempt
-def tambah_lagu_playlist(cursor: CursorWrapper, request, id_user_playlist):
-    if request.method == 'POST':
-        id_song = request.POST.get('id_song')
-
-        cursor.execute("""
-            SELECT id_playlist
-            FROM USER_PLAYLIST
-            WHERE id_user_playlist = %s
-        """, [id_user_playlist])
-        id_playlist = cursor.fetchone()[0]
-
-        cursor.execute("""
-            INSERT INTO PLAYLIST_SONG (id_playlist, id_song)
-            VALUES (%s, %s)
-        """, [id_playlist, id_song])
-
-        return redirect('user_playlist:detail_playlist', id_user_playlist=id_user_playlist)
-
-    cursor.execute("""
-        SELECT K.id, K.judul, AK.nama AS nama_artis
-        FROM KONTEN K
-        JOIN SONG S ON K.id = S.id_konten
-        JOIN ARTIST AR ON S.id_artist = AR.id
-        JOIN AKUN AK ON AR.email_akun = AK.email
-    """)
-    songs = cursor.fetchall()
-
-    song_choices = [(str(song[0]), f"{song[1]} - {song[2]}") for song in songs]
-    return render(request, 'tambah_lagu.html', {
-        'id_user_playlist': id_user_playlist,
-        'song_choices': song_choices
-    })
-
-@connectdb
-@csrf_exempt
-def hapus_lagu_playlist(cursor: CursorWrapper, request, id_user_playlist, id_song):
-    cursor.execute("""
-        DELETE FROM PLAYLIST_SONG
-        WHERE id_playlist = (
-            SELECT id_playlist
-            FROM USER_PLAYLIST
-            WHERE id_user_playlist = %s
-        ) AND id_song = %s;
-    """, [id_user_playlist, id_song])
-
-    return HttpResponseRedirect(reverse('user_playlist:detail_playlist', args=[id_user_playlist]))
+@api_view(['DELETE'])
+@require_authentication
+def remove_song_from_playlist(request, playlist_id, song_id):
+    """Remove a song from playlist"""
+    try:
+        email = request.user_email
+        
+        # Check if playlist exists and belongs to user
+        playlist = execute_single_query(
+            "SELECT email_pembuat, id_playlist FROM USER_PLAYLIST WHERE id_user_playlist = %s",
+            [playlist_id]
+        )
+        
+        if not playlist:
+            return Response({'error': 'Playlist not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        if playlist['email_pembuat'] != email:
+            return Response({'error': 'Unauthorized to modify this playlist'}, status=status.HTTP_403_FORBIDDEN)
+        
+        # Remove song from playlist
+        execute_delete_query(
+            "DELETE FROM PLAYLIST_SONG WHERE id_playlist = %s AND id_song = %s",
+            [playlist['id_playlist'], song_id]
+        )
+        
+        return Response({
+            'message': 'Lagu berhasil dihapus dari playlist'
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

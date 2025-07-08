@@ -1,196 +1,308 @@
-from utils.query import connectdb
-from django.urls import reverse
-from django.shortcuts import render
-from django.http import HttpResponseRedirect
-from django.db.backends.utils import CursorWrapper
+from rest_framework import status
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from utils.database import fetch_one, fetch_all
+from utils.authentication import require_authentication
 
-@connectdb
-def dashboard_pengguna(cursor: CursorWrapper, request):
+@api_view(['GET'])
+@require_authentication
+def dashboard(request):
+    """
+    Feature 4: Dashboard for all user types
+    GET /api/dashboard/
+    """
     try:
-        email = request.session.get('email')
-    except:
-        return HttpResponseRedirect(reverse("authentication:login"))
-    
-    playlists = ""
-    podcasts = ""
-    albums = ""
-    songs = ""
-
-    cursor.execute("SELECT * FROM AKUN WHERE email = %s", [email])
-    pengguna = cursor.fetchone()
-
-    if (request.session.get('is_podcaster')):
-        query =(rf"""SELECT k.judul AS podcast_title, COUNT(e.id_episode) AS episode_count, COALESCE(SUM(e.durasi), 0) AS total_duration_minutes
-                FROM podcast AS p
-                JOIN konten AS k ON p.id_konten = k.id
-                LEFT JOIN episode AS e ON p.id_konten = e.id_konten_podcast
-                WHERE p.email_podcaster = '{email}'
-                GROUP BY k.judul;
-                """)
-        cursor.execute(query)
-        podcasts = cursor.fetchall()
-    if (request.session.get('is_artist')):
-        query =(rf"""SELECT KONTEN.judul, SONG.total_play, SONG.total_download
-                FROM KONTEN, SONG
-                JOIN ARTIST ON SONG.id_artist = ARTIST.id
-                WHERE ARTIST.email_akun = '{email}' AND KONTEN.id = SONG.id_konten;
-                """)
-        cursor.execute(query)
-        songs = cursor.fetchall()
-    if (request.session.get('is_songwriter')):
-        query =(rf"""SELECT konten.judul AS song_title, song.total_play, song.total_download
-                FROM songwriter_write_song
-                JOIN song ON songwriter_write_song.id_song = song.id_konten
-                JOIN konten ON song.id_konten = konten.id
-                JOIN songwriter ON songwriter_write_song.id_songwriter = songwriter.id
-                WHERE songwriter.email_akun = '{email}';
-                """)
-        cursor.execute(query)
-        songs = cursor.fetchall()
-
-    query =(rf"""SELECT judul, jumlah_lagu, total_durasi
-                FROM user_playlist
-                WHERE email_pembuat = '{email}';
-                """)
-    cursor.execute(query)
-    playlists = cursor.fetchall()
-
-    is_artist = request.session.get('is_artist')
-    is_songwriter = request.session.get('is_songwriter')
-    is_podcaster = request.session.get('is_podcaster')
-    status_langganan = request.session.get('status_langganan')
-
-    records_song_artist, records_song_songwriter, records_podcast = [], [], []
-
-    records_user_playlist = fetch_user_playlist(cursor, email)
-
-    role_verified_list = []
-    if is_artist:
-        role_verified_list.append('Artist')
-    if is_songwriter:
-        role_verified_list.append('Songwriter')
-    if is_podcaster:
-        role_verified_list.append('Podcaster')
-    
-    role_verified = ', '.join(role_verified_list) if role_verified_list else "Pengguna Biasa"
-
-    gender = 'Perempuan' if request.session.get('gender') == 0 else 'Laki-laki'
+        user_email = request.user_email
+        user_type = request.user_type
         
-    context = {
-        "nama": pengguna[2],
-        "email": email,
-        "kota_asal": pengguna[7],
-        "gender": gender,
-        'tempat_lahir': pengguna[4],
-        'tanggal_lahir': pengguna[5],
-        "role": request.session.get('roles'),
-        "playlists": playlists,
-        "podcasts": podcasts,
-        "albums": albums,
-        "songs": songs,
-        'role': 'pengguna',
-        'status': 'success',
-        'role_verified': role_verified,
-        'status_langganan': status_langganan,
-        'isArtist': is_artist,
-        'isSongwriter': is_songwriter,
-        'isPodcaster': is_podcaster,
-        'records_user_playlist': records_user_playlist,
-        'records_song_artist': records_song_artist,
-        'records_song_songwriter': records_song_songwriter,
-        'records_podcast': records_podcast,
-    }
-    
-    return render(request, 'dashboard_pengguna.html', context)
+        if user_type == 'label':
+            return get_label_dashboard(user_email)
+        else:
+            return get_user_dashboard(user_email, request.user_roles)
+            
+    except Exception as e:
+        return Response({
+            'error': f'Terjadi kesalahan: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-@connectdb
-def dashboard_label(cursor: CursorWrapper, request):
-    email = request.session.get('email')
+def get_user_dashboard(user_email, user_roles):
+    """Get dashboard for regular users"""
+    try:
+        # Get basic user info
+        user_query = """
+            SELECT email, nama, is_verified, kota_asal, gender, 
+                   tempat_lahir, tanggal_lahir
+            FROM AKUN 
+            WHERE email = %s
+        """
+        user = fetch_one(user_query, [user_email])
+        
+        if not user:
+            return Response({
+                'error': 'User tidak ditemukan'
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        # Check premium status
+        premium_query = "SELECT email FROM PREMIUM WHERE email = %s"
+        is_premium = bool(fetch_one(premium_query, [user_email]))
+        
+        # Get subscription info if premium
+        subscription_info = None
+        if is_premium:
+            subscription_query = """
+                SELECT jenis_paket, timestamp_dimulai, timestamp_berakhir, metode_bayar
+                FROM TRANSACTION 
+                WHERE email = %s AND timestamp_berakhir > NOW()
+                ORDER BY timestamp_berakhir DESC
+                LIMIT 1
+            """
+            subscription = fetch_one(subscription_query, [user_email])
+            if subscription:
+                subscription_info = {
+                    'jenis': subscription['jenis_paket'],
+                    'mulai': subscription['timestamp_dimulai'].isoformat(),
+                    'berakhir': subscription['timestamp_berakhir'].isoformat(),
+                    'metode_bayar': subscription['metode_bayar']
+                }
+        
+        # Create response that matches frontend expectations
+        dashboard_data = {
+            'email': user['email'],
+            'nama': user['nama'],
+            'is_verified': user['is_verified'],
+            'kota_asal': user['kota_asal'],
+            'gender': user['gender'],
+            'tempat_lahir': user['tempat_lahir'],
+            'tanggal_lahir': user['tanggal_lahir'].isoformat() if user['tanggal_lahir'] else None,
+            'is_premium': is_premium,
+            'is_artist': 'artist' in user_roles,
+            'is_songwriter': 'songwriter' in user_roles,
+            'is_podcaster': 'podcaster' in user_roles,
+            'is_label': False,
+            'subscription': subscription_info
+        }
+        
+        # Add role-specific data
+        if 'user' in user_roles or len(user_roles) == 0:
+            # Get user playlists for regular users
+            playlist_query = """
+                SELECT up.id_user_playlist, up.judul, up.deskripsi, up.jumlah_lagu, 
+                       up.tanggal_dibuat, up.total_durasi
+                FROM USER_PLAYLIST up
+                WHERE up.email_pembuat = %s
+                ORDER BY up.tanggal_dibuat DESC
+            """
+            playlists = fetch_all(playlist_query, [user_email])
+            
+            dashboard_data['playlists'] = []
+            for playlist in playlists:
+                dashboard_data['playlists'].append({
+                    'id': str(playlist['id_user_playlist']),
+                    'judul': playlist['judul'],
+                    'deskripsi': playlist['deskripsi'],
+                    'jumlah_lagu': playlist['jumlah_lagu'],
+                    'tanggal_dibuat': playlist['tanggal_dibuat'].isoformat(),
+                    'total_durasi': playlist['total_durasi']
+                })
+        
+        if 'artist' in user_roles or 'songwriter' in user_roles:
+            # Get songs for artists/songwriters
+            if 'artist' in user_roles:
+                songs_query = """
+                    SELECT k.id, k.judul, k.tanggal_rilis, k.durasi, s.total_play, s.total_download,
+                           al.judul as album_judul
+                    FROM KONTEN k
+                    JOIN SONG s ON k.id = s.id_konten
+                    JOIN ARTIST a ON s.id_artist = a.id
+                    JOIN ALBUM al ON s.id_album = al.id
+                    WHERE a.email_akun = %s
+                    ORDER BY k.tanggal_rilis DESC
+                """
+                songs = fetch_all(songs_query, [user_email])
+            else:
+                # Songwriter
+                songs_query = """
+                    SELECT k.id, k.judul, k.tanggal_rilis, k.durasi, s.total_play, s.total_download,
+                           al.judul as album_judul
+                    FROM KONTEN k
+                    JOIN SONG s ON k.id = s.id_konten
+                    JOIN SONGWRITER_WRITE_SONG sws ON s.id_konten = sws.id_song
+                    JOIN SONGWRITER sw ON sws.id_songwriter = sw.id
+                    JOIN ALBUM al ON s.id_album = al.id
+                    WHERE sw.email_akun = %s
+                    ORDER BY k.tanggal_rilis DESC
+                """
+                songs = fetch_all(songs_query, [user_email])
+            
+            dashboard_data['songs'] = []
+            for song in songs:
+                dashboard_data['songs'].append({
+                    'id': str(song['id']),
+                    'judul': song['judul'],
+                    'album': song['album_judul'],
+                    'tanggal_rilis': song['tanggal_rilis'].isoformat(),
+                    'durasi': song['durasi'],
+                    'total_play': song['total_play'],
+                    'total_download': song['total_download']
+                })
+        
+        if 'podcaster' in user_roles:
+            # Get podcasts for podcasters
+            podcasts_query = """
+                SELECT k.id, k.judul, k.tanggal_rilis, k.durasi,
+                       COUNT(e.id_episode) as jumlah_episode
+                FROM KONTEN k
+                JOIN PODCAST p ON k.id = p.id_konten
+                LEFT JOIN EPISODE e ON p.id_konten = e.id_konten_podcast
+                WHERE p.email_podcaster = %s
+                GROUP BY k.id, k.judul, k.tanggal_rilis, k.durasi
+                ORDER BY k.tanggal_rilis DESC
+            """
+            podcasts = fetch_all(podcasts_query, [user_email])
+            
+            dashboard_data['podcasts'] = []
+            for podcast in podcasts:
+                dashboard_data['podcasts'].append({
+                    'id': str(podcast['id']),
+                    'judul': podcast['judul'],
+                    'tanggal_rilis': podcast['tanggal_rilis'].isoformat(),
+                    'durasi': podcast['durasi'],
+                    'jumlah_episode': podcast['jumlah_episode'] or 0
+                })
+        
+        return Response(dashboard_data)
+        
+    except Exception as e:
+        return Response({
+            'error': f'Terjadi kesalahan: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    albums = ""
+def get_label_dashboard(user_email):
+    """Get dashboard for labels"""
+    try:
+        # Get basic label info
+        label_query = """
+            SELECT id, nama, email, kontak
+            FROM LABEL 
+            WHERE email = %s
+        """
+        label = fetch_one(label_query, [user_email])
+        
+        if not label:
+            return Response({
+                'error': 'Label tidak ditemukan'
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        # Get albums under this label
+        albums_query = """
+            SELECT a.id, a.judul, a.jumlah_lagu, a.total_durasi, 
+                   COUNT(s.id_konten) as total_songs
+            FROM ALBUM a
+            LEFT JOIN SONG s ON a.id = s.id_album
+            WHERE a.id_label = %s
+            GROUP BY a.id, a.judul, a.jumlah_lagu, a.total_durasi
+            ORDER BY a.judul
+        """
+        albums = fetch_all(albums_query, [label['id']])
+        
+        # Get total royalties for the label
+        royalty_query = """
+            SELECT COALESCE(SUM(r.jumlah), 0) as total_royalty
+            FROM ROYALTI r
+            JOIN SONG s ON r.id_song = s.id_konten
+            JOIN ALBUM a ON s.id_album = a.id
+            WHERE a.id_label = %s
+        """
+        royalty_result = fetch_one(royalty_query, [label['id']])
+        total_royalty = royalty_result['total_royalty'] if royalty_result else 0
+        
+        dashboard_data = {
+            'email': label['email'],
+            'nama': label['nama'],
+            'kontak': label['kontak'],
+            'is_label': True,
+            'is_artist': False,
+            'is_songwriter': False,
+            'is_podcaster': False,
+            'is_premium': False,
+            'albums': [],
+            'total_royalty': float(total_royalty)
+        }
+        
+        for album in albums:
+            dashboard_data['albums'].append({
+                'id': str(album['id']),
+                'judul': album['judul'],
+                'jumlah_lagu': album['jumlah_lagu'],
+                'total_durasi': album['total_durasi'],
+                'total_songs': album['total_songs'] or 0
+            })
+        
+        return Response(dashboard_data)
+        
+    except Exception as e:
+        return Response({
+            'error': f'Terjadi kesalahan: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    cursor.execute("SELECT * FROM LABEL WHERE email = %s", [email])
-    label = cursor.fetchone()
-
-    if not label:
-        return HttpResponseRedirect(reverse('authentication:login'))
-
-    query =(rf"""SELECT ALBUM.judul, ALBUM.jumlah_lagu, ALBUM.total_durasi
-                 FROM ALBUM
-                 JOIN LABEL ON ALBUM.id_label = LABEL.id
-                 WHERE LABEL.email = '{email}';
-                 """)
-    cursor.execute(query)
-    albums = cursor.fetchall()
-
-    context = {
-        'role': 'label',
-        'status': 'success',
-        'id': str(label[0]),
-        'nama': label[1],
-        'email': label[2],
-        'kontak': label[4],
-        'id_pemilik_hak_cipta': str(label[5]),
-        'albums': albums,
-    }
-
-    return render(request, 'dashboard_label.html', context)
-
-def fetch_user_data(cursor: CursorWrapper, email, records_song_artist, records_song_songwriter, records_podcast):
-    id_artist, id_songwriter, id_pemilik_hak_cipta_artist, id_pemilik_hak_cipta_songwriter = "", "", "", ""
-
-    cursor.execute("SELECT * FROM ARTIST WHERE email_akun = %s", [email])
-    artist = cursor.fetchone()
-    if artist:
-        id_artist = artist[0]
-        id_pemilik_hak_cipta_artist = artist[2]
-        cursor.execute("SELECT * FROM SONG WHERE id_artist = %s", [id_artist])
-        artist_songs = cursor.fetchall()
-        for song in artist_songs:
-            id_song = song[0]
-            cursor.execute("SELECT judul, durasi FROM KONTEN WHERE id = %s", [id_song])
-            additional_detail_song = cursor.fetchone()
-            if additional_detail_song:
-                records_song_artist.append(song + additional_detail_song)
-
-    cursor.execute("SELECT * FROM SONGWRITER WHERE email_akun = %s", [email])
-    songwriter = cursor.fetchone()
-    if songwriter:
-        id_songwriter = songwriter[0]
-        id_pemilik_hak_cipta_songwriter = songwriter[2]
-        cursor.execute("SELECT id_song FROM SONGWRITER_WRITE_SONG WHERE id_songwriter = %s", [id_songwriter])
-        list_id_song = cursor.fetchall()
-        for song in list_id_song:
-            id_song = song[0]
-            cursor.execute("SELECT * FROM SONG WHERE id_konten = %s", [id_song])
-            records_song_awal = cursor.fetchone()
-            cursor.execute("SELECT judul, durasi FROM KONTEN WHERE id = %s", [id_song])
-            additional_detail_song = cursor.fetchone()
-            if records_song_awal and additional_detail_song:
-                records_song_songwriter.append(records_song_awal + additional_detail_song)
-
-    cursor.execute("SELECT * FROM PODCASTER WHERE email = %s", [email])
-    podcaster = cursor.fetchone()
-    if podcaster:
-        cursor.execute("SELECT * FROM PODCAST WHERE email_podcaster = %s", [email])
-        list_id_podcast = cursor.fetchall()
-        for podcast in list_id_podcast:
-            id_podcast = podcast[0]
-            cursor.execute("""
-                SELECT k.id, k.judul, COUNT(*) AS jumlah_episode, k.durasi 
-                FROM KONTEN AS k 
-                JOIN EPISODE AS e ON e.id_konten_podcast = k.id 
-                WHERE k.id = %s 
-                GROUP BY k.id
-            """, [id_podcast])
-            records_podcast.append(cursor.fetchone())
-
-    return id_artist, id_songwriter, id_pemilik_hak_cipta_artist, id_pemilik_hak_cipta_songwriter
-
-def fetch_user_playlist(cursor: CursorWrapper, email):
-    cursor.execute("SELECT * FROM USER_PLAYLIST WHERE email_pembuat = %s", [email])
-    return cursor.fetchall()
-
-def is_premium(cursor: CursorWrapper, email):
-    cursor.execute("SELECT * FROM PREMIUM WHERE email = %s", [email])
-    return bool(cursor.fetchone())
+@api_view(['GET'])
+@require_authentication
+def user_stats(request):
+    """
+    Get user statistics
+    GET /api/dashboard/stats/
+    """
+    try:
+        user_email = request.user_email
+        user_roles = request.user_roles
+        
+        stats = {}
+        
+        if 'user' in user_roles:
+            # Get playlist count
+            playlist_count_query = """
+                SELECT COUNT(*) as count
+                FROM USER_PLAYLIST
+                WHERE email_pembuat = %s
+            """
+            playlist_count = fetch_one(playlist_count_query, [user_email])
+            stats['playlists'] = playlist_count['count'] if playlist_count else 0
+        
+        if 'artist' in user_roles or 'songwriter' in user_roles:
+            # Get song count and total plays
+            if 'artist' in user_roles:
+                song_stats_query = """
+                    SELECT COUNT(*) as song_count, COALESCE(SUM(s.total_play), 0) as total_plays
+                    FROM SONG s
+                    JOIN ARTIST a ON s.id_artist = a.id
+                    WHERE a.email_akun = %s
+                """
+            else:
+                song_stats_query = """
+                    SELECT COUNT(*) as song_count, COALESCE(SUM(s.total_play), 0) as total_plays
+                    FROM SONG s
+                    JOIN SONGWRITER_WRITE_SONG sws ON s.id_konten = sws.id_song
+                    JOIN SONGWRITER sw ON sws.id_songwriter = sw.id
+                    WHERE sw.email_akun = %s
+                """
+            
+            song_stats = fetch_one(song_stats_query, [user_email])
+            stats['songs'] = song_stats['song_count'] if song_stats else 0
+            stats['total_plays'] = song_stats['total_plays'] if song_stats else 0
+        
+        if 'podcaster' in user_roles:
+            # Get podcast count
+            podcast_count_query = """
+                SELECT COUNT(*) as count
+                FROM PODCAST
+                WHERE email_podcaster = %s
+            """
+            podcast_count = fetch_one(podcast_count_query, [user_email])
+            stats['podcasts'] = podcast_count['count'] if podcast_count else 0
+        
+        return Response(stats)
+        
+    except Exception as e:
+        return Response({
+            'error': f'Terjadi kesalahan: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

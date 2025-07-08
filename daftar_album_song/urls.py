@@ -1,19 +1,26 @@
 from django.urls import path
-from .views import (list_album, create_album, list_song, create_song, list_album_label, list_song_label, delete_song,
-                    delete_album, delete_album_label, delete_song_label)
-from daftar_album_song.views import list_song, list_album
+from . import views
 
 app_name = 'daftar_album_song'
 
 urlpatterns = [
-    path('list-album/', list_album, name='list_album'),
-    path('create-album/', create_album, name='create_album'),
-    path('list-album/list-song/', list_song, name='list_song'),
-    path('list-album/create-song/', create_song, name='create_song'),
-    path('list-album/label/', list_album_label, name='list_album_label'),
-    path('list-album/list-song/label/', list_song_label, name='list_song_label'),
-    path('list-album/list-song/delete-song/', delete_song, name='delete_song'),
-    path('list-album/delete-album/', delete_album, name='delete_album'),
-    path('list-album/delete-album/label/', delete_album_label, name='delete_album_label'),
-    path('list-album/delete-song/label/', delete_song_label, name='delete_song_label'),
+    # REST API endpoints
+    path('albums/', views.get_albums, name='get_albums_api'),
+    path('albums/<str:album_id>/', views.get_album_detail, name='album_detail_api'),
+    path('songs/', views.get_songs, name='get_songs_api'),
+    path('songs/popular/', views.get_popular_songs, name='popular_songs_api'),
+    path('songs/new/', views.get_new_releases, name='new_releases_api'),
+    
+    # Feature 13: Artist/Songwriter Album & Song Management
+    path('user-albums/', views.get_user_albums, name='get_user_albums_api'),
+    path('create-album/', views.create_album, name='create_album_api'),
+    path('create-song/', views.create_song, name='create_song_api'),
+    path('album/<str:album_id>/delete/', views.delete_album, name='delete_album_api'),
+    path('song/<str:song_id>/delete/', views.delete_song, name='delete_song_api'),
+    
+    # Feature 16: Label Album & Song Management
+    path('label-albums/', views.get_label_albums, name='get_label_albums_api'),
+    path('label-album/<str:album_id>/songs/', views.get_label_album_songs, name='get_label_album_songs_api'),
+    path('label-album/<str:album_id>/delete/', views.delete_label_album, name='delete_label_album_api'),
+    path('label-song/<str:song_id>/delete/', views.delete_label_song, name='delete_label_song_api'),
 ]
