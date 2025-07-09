@@ -262,8 +262,7 @@ def register_user(request):
                 'error': 'Email sudah terdaftar sebagai label'
             }, status=status.HTTP_400_BAD_REQUEST)
         
-        # Determine verification status based on roles
-        is_verified = len(roles) > 0  # Verified if has specific roles
+        is_verified = len(roles) > 0
         
         # Insert into AKUN table
         insert_user_query = """
@@ -274,9 +273,6 @@ def register_user(request):
             email, password, nama, gender, tempat_lahir, 
             tanggal_lahir, kota_asal, is_verified
         ])
-        
-        # Add to NONPREMIUM by default
-        execute_query("INSERT INTO NONPREMIUM (email) VALUES (%s)", [email])
         
         # Handle roles
         if 'artist' in roles:
