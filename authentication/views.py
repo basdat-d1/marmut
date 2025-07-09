@@ -8,6 +8,7 @@ from utils.database import execute_query, fetch_one
 from utils.authentication import require_authentication, allow_any
 import uuid
 from datetime import datetime, date
+from django.db import transaction, connection
 
 @ensure_csrf_cookie
 @api_view(['GET'])
@@ -228,8 +229,6 @@ def register_user(request):
     """
     try:
         data = request.data
-        
-        # Required fields
         email = data.get('email')
         password = data.get('password')
         nama = data.get('nama')
@@ -237,74 +236,49 @@ def register_user(request):
         tempat_lahir = data.get('tempat_lahir')
         tanggal_lahir = data.get('tanggal_lahir')
         kota_asal = data.get('kota_asal')
-        roles = data.get('roles', [])
-        
-        # Validation
+        roles = data.get('roles') or data.get('role') or []
         if not all([email, password, nama, gender is not None, tempat_lahir, tanggal_lahir, kota_asal]):
-            return Response({
-                'error': 'Semua field wajib diisi'
-            }, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Check if email already exists
+            return Response({'error': 'Semua field wajib diisi'}, status=status.HTTP_400_BAD_REQUEST)
         check_user_query = "SELECT email FROM AKUN WHERE email = %s"
         existing_user = fetch_one(check_user_query, [email])
-        
         if existing_user:
-            return Response({
-                'error': 'Email sudah terdaftar'
-            }, status=status.HTTP_400_BAD_REQUEST)
-        
+            return Response({'error': 'Email sudah terdaftar'}, status=status.HTTP_400_BAD_REQUEST)
         check_label_query = "SELECT email FROM LABEL WHERE email = %s"
         existing_label = fetch_one(check_label_query, [email])
-        
         if existing_label:
-            return Response({
-                'error': 'Email sudah terdaftar sebagai label'
-            }, status=status.HTTP_400_BAD_REQUEST)
-        
+            return Response({'error': 'Email sudah terdaftar sebagai label'}, status=status.HTTP_400_BAD_REQUEST)
         is_verified = len(roles) > 0
-        
-        # Insert into AKUN table
-        insert_user_query = """
-            INSERT INTO AKUN (email, password, nama, gender, tempat_lahir, tanggal_lahir, kota_asal, is_verified)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-        """
-        execute_query(insert_user_query, [
-            email, password, nama, gender, tempat_lahir, 
-            tanggal_lahir, kota_asal, is_verified
-        ])
-        
-        # Handle roles
-        if 'artist' in roles:
-            # Create copyright owner first
-            copyright_id = str(uuid.uuid4())
-            execute_query("INSERT INTO PEMILIK_HAK_CIPTA (id, rate_royalti) VALUES (%s, %s)", [copyright_id, 50])
-            
-            artist_id = str(uuid.uuid4())
-            insert_artist_query = "INSERT INTO ARTIST (id, email_akun, id_pemilik_hak_cipta) VALUES (%s, %s, %s)"
-            execute_query(insert_artist_query, [artist_id, email, copyright_id])
-        
-        if 'songwriter' in roles:
-            # Create copyright owner first
-            copyright_id = str(uuid.uuid4())
-            execute_query("INSERT INTO PEMILIK_HAK_CIPTA (id, rate_royalti) VALUES (%s, %s)", [copyright_id, 50])
-            
-            songwriter_id = str(uuid.uuid4())
-            insert_songwriter_query = "INSERT INTO SONGWRITER (id, email_akun, id_pemilik_hak_cipta) VALUES (%s, %s, %s)"
-            execute_query(insert_songwriter_query, [songwriter_id, email, copyright_id])
-        
-        if 'podcaster' in roles:
-            insert_podcaster_query = "INSERT INTO PODCASTER (email) VALUES (%s)"
-            execute_query(insert_podcaster_query, [email])
-        
-        return Response({
-            'message': 'Registrasi berhasil'
-        }, status=status.HTTP_201_CREATED)
-        
+        try:
+            with transaction.atomic():
+                with connection.cursor() as cursor:
+                    insert_user_query = """
+                        INSERT INTO AKUN (email, password, nama, gender, tempat_lahir, tanggal_lahir, kota_asal, is_verified)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                    """
+                    cursor.execute(insert_user_query, [
+                        email, password, nama, gender, tempat_lahir, 
+                        tanggal_lahir, kota_asal, is_verified
+                    ])
+                    if 'artist' in roles:
+                        copyright_id = str(uuid.uuid4())
+                        cursor.execute("INSERT INTO PEMILIK_HAK_CIPTA (id, rate_royalti) VALUES (%s, %s)", [copyright_id, 50])
+                        artist_id = str(uuid.uuid4())
+                        insert_artist_query = "INSERT INTO ARTIST (id, email_akun, id_pemilik_hak_cipta) VALUES (%s, %s, %s)"
+                        cursor.execute(insert_artist_query, [artist_id, email, copyright_id])
+                    if 'songwriter' in roles:
+                        copyright_id = str(uuid.uuid4())
+                        cursor.execute("INSERT INTO PEMILIK_HAK_CIPTA (id, rate_royalti) VALUES (%s, %s)", [copyright_id, 50])
+                        songwriter_id = str(uuid.uuid4())
+                        insert_songwriter_query = "INSERT INTO SONGWRITER (id, email_akun, id_pemilik_hak_cipta) VALUES (%s, %s, %s)"
+                        cursor.execute(insert_songwriter_query, [songwriter_id, email, copyright_id])
+                    if 'podcaster' in roles:
+                        insert_podcaster_query = "INSERT INTO PODCASTER (email) VALUES (%s)"
+                        cursor.execute(insert_podcaster_query, [email])
+            return Response({'message': 'Registrasi berhasil'}, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({'error': f'Terjadi kesalahan: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     except Exception as e:
-        return Response({
-            'error': f'Terjadi kesalahan: {str(e)}'
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({'error': f'Terjadi kesalahan: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['POST'])
 @allow_any

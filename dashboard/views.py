@@ -83,27 +83,26 @@ def get_user_dashboard(user_email, user_roles):
         }
         
         # Add role-specific data
-        if 'user' in user_roles or len(user_roles) == 0:
-            # Get user playlists for regular users
-            playlist_query = """
-                SELECT up.id_user_playlist, up.judul, up.deskripsi, up.jumlah_lagu, 
-                       up.tanggal_dibuat, up.total_durasi
-                FROM USER_PLAYLIST up
-                WHERE up.email_pembuat = %s
-                ORDER BY up.tanggal_dibuat DESC
-            """
-            playlists = fetch_all(playlist_query, [user_email])
-            
-            dashboard_data['playlists'] = []
-            for playlist in playlists:
-                dashboard_data['playlists'].append({
-                    'id': str(playlist['id_user_playlist']),
-                    'judul': playlist['judul'],
-                    'deskripsi': playlist['deskripsi'],
-                    'jumlah_lagu': playlist['jumlah_lagu'],
-                    'tanggal_dibuat': playlist['tanggal_dibuat'].isoformat(),
-                    'total_durasi': playlist['total_durasi']
-                })
+        # Always get user playlists for all users (except labels)
+        playlist_query = """
+            SELECT up.id_user_playlist, up.judul, up.deskripsi, up.jumlah_lagu, 
+                   up.tanggal_dibuat, up.total_durasi
+            FROM USER_PLAYLIST up
+            WHERE up.email_pembuat = %s
+            ORDER BY up.tanggal_dibuat DESC
+        """
+        playlists = fetch_all(playlist_query, [user_email])
+        
+        dashboard_data['playlists'] = []
+        for playlist in playlists:
+            dashboard_data['playlists'].append({
+                'id': str(playlist['id_user_playlist']),
+                'judul': playlist['judul'],
+                'deskripsi': playlist['deskripsi'],
+                'jumlah_lagu': playlist['jumlah_lagu'],
+                'tanggal_dibuat': playlist['tanggal_dibuat'].isoformat(),
+                'total_durasi': playlist['total_durasi']
+            })
         
         if 'artist' in user_roles or 'songwriter' in user_roles:
             # Get songs for artists/songwriters

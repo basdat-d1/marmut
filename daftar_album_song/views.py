@@ -700,3 +700,77 @@ def delete_label_song(request, song_id):
         
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['GET'])
+@require_authentication
+def get_user_songs(request):
+    """
+    Get songs owned by the authenticated artist/songwriter
+    GET /api/album-song/user-songs/
+    """
+    try:
+        email = request.user_email
+        if not email:
+            return Response({'error': 'Not authenticated'}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        # Check if user is artist or songwriter
+        artist = execute_single_query(
+            "SELECT id FROM ARTIST WHERE email_akun = %s",
+            [email]
+        )
+        
+        songwriter = execute_single_query(
+            "SELECT id FROM SONGWRITER WHERE email_akun = %s",
+            [email]
+        )
+        
+        if not artist and not songwriter:
+            return Response({'error': 'Only artists and songwriters can view their songs'}, status=status.HTTP_403_FORBIDDEN)
+        
+        # Get songs where user is involved
+        if artist:
+            # User is an artist
+            songs = execute_query(
+                """SELECT k.id, k.judul, k.durasi, k.tanggal_rilis, s.total_play, s.total_download,
+                          a.judul as album_judul, l.nama as label
+                   FROM SONG s
+                   JOIN KONTEN k ON s.id_konten = k.id
+                   JOIN ALBUM a ON s.id_album = a.id
+                   JOIN LABEL l ON a.id_label = l.id
+                   WHERE s.id_artist = %s
+                   ORDER BY k.tanggal_rilis DESC""",
+                [artist['id']]
+            )
+        else:
+            # User is a songwriter
+            songs = execute_query(
+                """SELECT k.id, k.judul, k.durasi, k.tanggal_rilis, s.total_play, s.total_download,
+                          a.judul as album_judul, l.nama as label
+                   FROM SONG s
+                   JOIN KONTEN k ON s.id_konten = k.id
+                   JOIN SONGWRITER_WRITE_SONG sws ON s.id_konten = sws.id_song
+                   JOIN SONGWRITER sw ON sws.id_songwriter = sw.id
+                   JOIN ALBUM a ON s.id_album = a.id
+                   JOIN LABEL l ON a.id_label = l.id
+                   WHERE sw.email_akun = %s
+                   ORDER BY k.tanggal_rilis DESC""",
+                [email]
+            )
+        
+        return Response({
+            'songs': [
+                {
+                    'id': song['id'],
+                    'judul': song['judul'],
+                    'durasi': song['durasi'],
+                    'tanggal_rilis': song['tanggal_rilis'].isoformat() if song['tanggal_rilis'] else None,
+                    'total_play': song['total_play'],
+                    'total_download': song['total_download'],
+                    'album': song['album_judul'],
+                    'label': song['label']
+                } for song in songs
+            ]
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

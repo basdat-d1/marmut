@@ -13,6 +13,7 @@ urlpatterns = [
     
     # Feature 13: Artist/Songwriter Album & Song Management
     path('user-albums/', views.get_user_albums, name='get_user_albums_api'),
+    path('user-songs/', views.get_user_songs, name='get_user_songs_api'),
     path('create-album/', views.create_album, name='create_album_api'),
     path('create-song/', views.create_song, name='create_song_api'),
     path('album/<str:album_id>/delete/', views.delete_album, name='delete_album_api'),
