@@ -4,6 +4,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from utils.authentication import require_authentication
 from utils.database import execute_query, execute_single_query, execute_insert_query
+import psycopg2
 
 def convert_duration(total_minutes):
     hours = total_minutes // 60
@@ -59,19 +60,25 @@ def play_user_playlist(request, id_user_playlist):
             timestamp = datetime.now()
             
             # Record playlist play
-            execute_insert_query(
-                """INSERT INTO AKUN_PLAY_USER_PLAYLIST (email_pemain, id_user_playlist, email_pembuat, waktu)
-                   VALUES (%s, %s, %s, %s)""",
-                [email, id_user_playlist, playlist['email_pembuat'], timestamp]
-            )
+            try:
+                execute_insert_query(
+                    """INSERT INTO AKUN_PLAY_USER_PLAYLIST (email_pemain, id_user_playlist, email_pembuat, waktu)
+                       VALUES (%s, %s, %s, %s)""",
+                    [email, id_user_playlist, playlist['email_pembuat'], timestamp]
+                )
+            except psycopg2.IntegrityError:
+                pass  # Skip if already exists
             
             # Record individual song plays
             for song in songs:
-                execute_insert_query(
-                    """INSERT INTO AKUN_PLAY_SONG (email_pemain, id_song, waktu)
-                       VALUES (%s, %s, %s)""",
-                    [email, song['id'], timestamp]
-                )
+                try:
+                    execute_insert_query(
+                        """INSERT INTO AKUN_PLAY_SONG (email_pemain, id_song, waktu)
+                           VALUES (%s, %s, %s)""",
+                        [email, song['id'], timestamp]
+                    )
+                except psycopg2.IntegrityError:
+                    pass  # Skip if already exists
             
             return Response({
                 'message': 'Playlist played successfully',
@@ -132,11 +139,14 @@ def play_song_from_playlist(request, id_user_playlist, song_id):
         
         # Record individual song play
         timestamp = datetime.now()
-        execute_query(
-            """INSERT INTO AKUN_PLAY_SONG (email_pemain, id_song, waktu)
-               VALUES (%s, %s, %s)""",
-            [email, song_id, timestamp]
-        )
+        try:
+            execute_insert_query(
+                """INSERT INTO AKUN_PLAY_SONG (email_pemain, id_song, waktu)
+                   VALUES (%s, %s, %s)""",
+                [email, song_id, timestamp]
+            )
+        except psycopg2.IntegrityError:
+            pass  # Skip if already exists
         
         # Update song play count
         execute_query(

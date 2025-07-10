@@ -53,9 +53,13 @@ def execute_insert_query(query, params=None):
     """Execute an INSERT query and return the inserted row"""
     with get_db_connection() as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cursor:
-            cursor.execute(query + " RETURNING *", params or [])
-            conn.commit()
-            return cursor.fetchone()
+            try:
+                cursor.execute(query + " RETURNING *", params or [])
+                conn.commit()
+                return cursor.fetchone()
+            except psycopg2.IntegrityError as e:
+                conn.rollback()
+                raise
 
 def execute_update_query(query, params=None):
     """Execute an UPDATE query and return number of affected rows"""
