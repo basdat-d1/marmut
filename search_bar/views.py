@@ -27,17 +27,20 @@ def search(request):
             'total': 0
         }
         
-        # Search songs
+        # Search songs (by title, artist, genre)
         songs_query = """
-            SELECT k.id, k.judul, a.nama as artist_nama, k.durasi, s.total_play
+            SELECT DISTINCT k.id, k.judul, a.nama as artist_nama, k.durasi, s.total_play
             FROM KONTEN k
             JOIN SONG s ON k.id = s.id_konten
             JOIN ARTIST ar ON s.id_artist = ar.id
             JOIN AKUN a ON ar.email_akun = a.email
+            LEFT JOIN GENRE g ON k.id = g.id_konten
             WHERE LOWER(k.judul) LIKE LOWER(%s)
+               OR LOWER(a.nama) LIKE LOWER(%s)
+               OR LOWER(g.genre) LIKE LOWER(%s)
             ORDER BY s.total_play DESC, k.judul
         """
-        songs = fetch_all(songs_query, [f'%{query}%'])
+        songs = fetch_all(songs_query, [f'%{query}%', f'%{query}%', f'%{query}%'])
         
         for song in songs:
             results['songs'].append({
@@ -49,19 +52,22 @@ def search(request):
                 'total_play': song['total_play']
             })
         
-        # Search podcasts
+        # Search podcasts (by title, podcaster, genre)
         podcasts_query = """
-            SELECT k.id, k.judul, a.nama as podcaster_nama, k.durasi,
+            SELECT DISTINCT k.id, k.judul, a.nama as podcaster_nama, k.durasi,
                    COUNT(e.id_episode) as jumlah_episode
             FROM KONTEN k
             JOIN PODCAST p ON k.id = p.id_konten
             JOIN AKUN a ON p.email_podcaster = a.email
             LEFT JOIN EPISODE e ON p.id_konten = e.id_konten_podcast
+            LEFT JOIN GENRE g ON k.id = g.id_konten
             WHERE LOWER(k.judul) LIKE LOWER(%s)
+               OR LOWER(a.nama) LIKE LOWER(%s)
+               OR LOWER(g.genre) LIKE LOWER(%s)
             GROUP BY k.id, k.judul, a.nama, k.durasi
             ORDER BY k.judul
         """
-        podcasts = fetch_all(podcasts_query, [f'%{query}%'])
+        podcasts = fetch_all(podcasts_query, [f'%{query}%', f'%{query}%', f'%{query}%'])
         
         for podcast in podcasts:
             results['podcasts'].append({
@@ -73,21 +79,22 @@ def search(request):
                 'jumlah_episode': podcast['jumlah_episode'] or 0
             })
         
-        # Search user playlists
+        # Search user playlists (by title, creator)
         playlists_query = """
             SELECT up.id_user_playlist, up.judul, a.nama as pembuat_nama, 
                    up.jumlah_lagu, up.total_durasi
             FROM USER_PLAYLIST up
             JOIN AKUN a ON up.email_pembuat = a.email
             WHERE LOWER(up.judul) LIKE LOWER(%s)
+               OR LOWER(a.nama) LIKE LOWER(%s)
             ORDER BY up.judul
         """
-        playlists = fetch_all(playlists_query, [f'%{query}%'])
+        playlists = fetch_all(playlists_query, [f'%{query}%', f'%{query}%'])
         
         for playlist in playlists:
             results['playlists'].append({
                 'id': str(playlist['id_user_playlist']),
-                'tipe': 'USER PLAYLIST',
+                'tipe': 'USER_PLAYLIST',
                 'judul': playlist['judul'],
                 'oleh': playlist['pembuat_nama'],
                 'jumlah_lagu': playlist['jumlah_lagu'],
@@ -96,14 +103,6 @@ def search(request):
         
         # Calculate total results
         results['total'] = len(results['songs']) + len(results['podcasts']) + len(results['playlists'])
-        
-        # Combine all results for mixed display
-        all_results = []
-        all_results.extend(results['songs'])
-        all_results.extend(results['podcasts'])
-        all_results.extend(results['playlists'])
-        
-        results['all'] = all_results
         
         if results['total'] == 0:
             return Response({
