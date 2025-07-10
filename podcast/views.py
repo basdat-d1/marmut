@@ -82,14 +82,14 @@ def create_podcast(request):
             return Response({'error': 'User is not a podcaster'}, status=status.HTTP_403_FORBIDDEN)
         
         data = request.data
-        podcast_title = data.get('title', '').strip()
-        podcast_genre = data.get('genre', '').strip()
+        podcast_title = data.get('judul', '').strip()
+        podcast_genres = data.get('genres', [])
+        if not isinstance(podcast_genres, list):
+            podcast_genres = []
+        # deskripsi = data.get('deskripsi', '').strip()  # Optional, not used in DB
         
-        if not podcast_title or not podcast_genre:
-            return Response({'error': 'Title and genre are required'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        if podcast_genre == "Select Genre":
-            return Response({'error': 'Please select a valid genre'}, status=status.HTTP_400_BAD_REQUEST)
+        if not podcast_title or not podcast_genres:
+            return Response({'error': 'Title and at least one genre are required'}, status=status.HTTP_400_BAD_REQUEST)
         
         # Create podcast
         id_konten = str(uuid4())
@@ -104,12 +104,13 @@ def create_podcast(request):
             [id_konten, podcast_title, tanggal_rilis, tahun, total_durasi]
         )
         
-        # Insert into GENRE table
-        execute_insert_query(
-            """INSERT INTO GENRE (id_konten, genre)
-               VALUES (%s, %s)""",
-            [id_konten, podcast_genre]
-        )
+        # Insert all genres into GENRE table
+        for genre in podcast_genres:
+            execute_insert_query(
+                """INSERT INTO GENRE (id_konten, genre)
+                   VALUES (%s, %s)""",
+                [id_konten, genre]
+            )
         
         # Insert into PODCAST table
         execute_insert_query(
@@ -123,7 +124,7 @@ def create_podcast(request):
             'podcast': {
                 'id': id_konten,
                 'judul': podcast_title,
-                'genre': podcast_genre,
+                'genres': podcast_genres,
                 'tanggal_rilis': tanggal_rilis
             }
         }, status=status.HTTP_201_CREATED)
@@ -219,7 +220,7 @@ def get_podcast_episodes(request, podcast_id):
 def create_episode(request, podcast_id):
     """Create a new episode for a podcast"""
     try:
-        email = request.session.get('email')
+        email = request.user_email
         if not email:
             return Response({'error': 'Not authenticated'}, status=status.HTTP_401_UNAUTHORIZED)
         
@@ -253,7 +254,7 @@ def create_episode(request, podcast_id):
         # Create episode
         id_episode = str(uuid4())
         tanggal_rilis = datetime.now().date()
-        episode_duration = episode_duration_minutes * 60  # Convert to seconds
+        episode_duration = episode_duration_minutes  # Simpan dalam menit
         
         execute_insert_query(
             """INSERT INTO EPISODE (id_episode, id_konten_podcast, judul, deskripsi, durasi, tanggal_rilis)

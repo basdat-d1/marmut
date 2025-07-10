@@ -45,6 +45,9 @@ def get_podcast_detail(request, podcast_id):
             [podcast_id]
         )
         
+        # Calculate total duration from episodes
+        total_duration = sum([episode['durasi'] for episode in episodes]) if episodes else 0
+        
         # Get podcast genres
         genres = execute_query(
             """SELECT g.genre
@@ -57,7 +60,7 @@ def get_podcast_detail(request, podcast_id):
             'podcast': {
                 'id': podcast['id_konten'],
                 'judul': podcast['judul'],
-                'total_durasi': convert_duration(podcast['durasi']),
+                'total_durasi': convert_duration(total_duration),
                 'tanggal_rilis': podcast['tanggal_rilis'],
                 'podcaster': podcast['podcaster_name'],
                 'podcaster_email': podcast['podcaster_email'],

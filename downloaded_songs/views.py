@@ -22,15 +22,14 @@ def get_downloaded_songs(request):
         if not premium_check:
             return Response({'error': 'Only premium users can access downloads'}, status=status.HTTP_403_FORBIDDEN)
         
-        # Get downloaded songs (no tanggal_download column)
+        # Get downloaded songs
         songs = execute_query(
-            """SELECT k.id, k.judul, ak.nama AS artist, k.durasi, a.judul AS album
+            """SELECT k.id, k.judul, ak.nama AS artist
                FROM DOWNLOADED_SONG ds
                JOIN SONG s ON ds.id_song = s.id_konten
                JOIN KONTEN k ON s.id_konten = k.id
                JOIN ARTIST ar ON s.id_artist = ar.id
                JOIN AKUN ak ON ar.email_akun = ak.email
-               JOIN ALBUM a ON s.id_album = a.id
                WHERE ds.email_downloader = %s""",
             [email]
         )
@@ -40,9 +39,7 @@ def get_downloaded_songs(request):
                 {
                     'id': song['id'],
                     'judul': song['judul'],
-                    'artist': song['artist'],
-                    'album': song['album'],
-                    'durasi': song['durasi']
+                    'artist': song['artist']
                 } for song in songs
             ]
         }, status=status.HTTP_200_OK)
@@ -68,13 +65,17 @@ def remove_downloaded_song(request, song_id):
         if not premium_check:
             return Response({'error': 'Only premium users can manage downloads'}, status=status.HTTP_403_FORBIDDEN)
         
-        # Check if song is downloaded by user
-        downloaded = execute_single_query(
-            "SELECT id_song FROM DOWNLOADED_SONG WHERE email_downloader = %s AND id_song = %s",
+        # Get song info before deleting
+        song_info = execute_single_query(
+            """SELECT k.judul 
+               FROM DOWNLOADED_SONG ds
+               JOIN SONG s ON ds.id_song = s.id_konten
+               JOIN KONTEN k ON s.id_konten = k.id
+               WHERE ds.email_downloader = %s AND ds.id_song = %s""",
             [email, song_id]
         )
         
-        if not downloaded:
+        if not song_info:
             return Response({'error': 'Song not found in downloads'}, status=status.HTTP_404_NOT_FOUND)
         
         # Remove from downloads
@@ -83,8 +84,15 @@ def remove_downloaded_song(request, song_id):
             [email, song_id]
         )
         
+        # Update song total_download count (decrease by 1)
+        execute_query(
+            "UPDATE SONG SET total_download = total_download - 1 WHERE id_konten = %s",
+            [song_id], fetch=False
+        )
+        
         return Response({
-            'message': 'Song removed from downloads successfully'
+            'message': f"Berhasil menghapus Lagu dengan judul '{song_info['judul']}' dari daftar unduhan!",
+            'song_title': song_info['judul']
         }, status=status.HTTP_200_OK)
         
     except Exception as e:
@@ -108,7 +116,7 @@ def get_download_stats(request):
         if not premium_check:
             return Response({'error': 'Only premium users can access download stats'}, status=status.HTTP_403_FORBIDDEN)
         
-        # Get download stats (no tanggal_download column)
+        # Get download stats
         stats = execute_single_query(
             "SELECT COUNT(*) as total_downloads FROM DOWNLOADED_SONG WHERE email_downloader = %s",
             [email]
