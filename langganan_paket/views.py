@@ -59,7 +59,7 @@ def get_user_subscription(request):
             return Response({'error': 'Not authenticated'}, status=status.HTTP_401_UNAUTHORIZED)
         
         # Check if user is premium
-        is_premium = execute_single_query(
+        is_premium = fetch_one(
             "SELECT email FROM PREMIUM WHERE email = %s",
             [email]
         )
@@ -71,10 +71,9 @@ def get_user_subscription(request):
             }, status=status.HTTP_200_OK)
         
         # Get current active subscription
-        current_subscription = execute_single_query(
-            """SELECT t.jenis_paket, t.nominal, t.timestamp_dimulai, t.timestamp_berakhir, p.harga as package_price
+        current_subscription = fetch_one(
+            """SELECT t.jenis_paket, t.nominal, t.timestamp_dimulai, t.timestamp_berakhir, t.metode_bayar
                FROM TRANSACTION t
-               JOIN PAKET p ON t.jenis_paket = p.jenis
                WHERE t.email = %s AND t.timestamp_berakhir > NOW()
                ORDER BY t.timestamp_berakhir DESC
                LIMIT 1""",
@@ -85,11 +84,13 @@ def get_user_subscription(request):
             return Response({
                 'is_premium': True,
                 'subscription': {
+                    'jenis': current_subscription['jenis_paket'],
                     'jenis_paket': current_subscription['jenis_paket'],
                     'harga': current_subscription['nominal'],
-                    'timestamp_dimulai': current_subscription['timestamp_dimulai'],
-                    'timestamp_berakhir': current_subscription['timestamp_berakhir'],
-                    'package_price': current_subscription['package_price']
+                    'nominal': current_subscription['nominal'],
+                    'timestamp_dimulai': current_subscription['timestamp_dimulai'].strftime('%d %B %Y, %H:%M'),
+                    'timestamp_berakhir': current_subscription['timestamp_berakhir'].strftime('%d %B %Y, %H:%M'),
+                    'metode_bayar': current_subscription['metode_bayar']
                 }
             }, status=status.HTTP_200_OK)
         else:
@@ -129,63 +130,89 @@ def subscribe_package(request):
                 'error': 'Paket tidak ditemukan'
             }, status=status.HTTP_404_NOT_FOUND)
         
-        # Check if user is already premium
-        premium_query = "SELECT email FROM PREMIUM WHERE email = %s"
-        is_premium = fetch_one(premium_query, [user_email])
+        # Check if user has active subscription
+        active_subscription_query = """
+            SELECT timestamp_berakhir FROM TRANSACTION 
+            WHERE email = %s AND timestamp_berakhir > NOW()
+            ORDER BY timestamp_berakhir DESC LIMIT 1
+        """
+        active_subscription = fetch_one(active_subscription_query, [user_email])
+        
+        if active_subscription:
+            # User already has active subscription - return user-friendly error
+            return Response({
+                'error': 'Anda sudah memiliki langganan aktif. Langganan akan berakhir pada ' + 
+                        active_subscription['timestamp_berakhir'].strftime('%d %B %Y, %H:%M') + 
+                        '. Silakan tunggu hingga berakhir untuk berlangganan kembali.'
+            }, status=status.HTTP_400_BAD_REQUEST)
         
         # Calculate subscription period based on package type
         now = datetime.now()
         if jenis_paket == '1 Bulan':
-            end_date = now + timedelta(days=30)
+            duration_days = 30
         elif jenis_paket == '3 Bulan':
-            end_date = now + timedelta(days=90)
+            duration_days = 90
         elif jenis_paket == '6 Bulan':
-            end_date = now + timedelta(days=180)
+            duration_days = 180
         elif jenis_paket == '1 Tahun':
-            end_date = now + timedelta(days=365)
+            duration_days = 365
         else:
             return Response({
                 'error': 'Jenis paket tidak valid'
             }, status=status.HTTP_400_BAD_REQUEST)
         
-        # Create transaction
-        transaction_id = str(uuid.uuid4())
-        insert_transaction_query = """
-            INSERT INTO TRANSACTION (id, jenis_paket, email, timestamp_dimulai, 
-                                   timestamp_berakhir, metode_bayar, nominal)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s)
-        """
-        execute_query(insert_transaction_query, [
-            transaction_id, jenis_paket, user_email, now, end_date, 
-            metode_bayar, package['harga']
-        ])
+        start_date = now
+        end_date = now + timedelta(days=duration_days)
         
-        # Move user to premium if not already
-        if not is_premium:
-            # Remove from NONPREMIUM
-            delete_nonpremium_query = "DELETE FROM NONPREMIUM WHERE email = %s"
-            execute_query(delete_nonpremium_query, [user_email])
+        try:
+            # Create transaction - trigger will automatically move user from NONPREMIUM to PREMIUM
+            transaction_id = str(uuid.uuid4())
+            insert_transaction_query = """
+                INSERT INTO TRANSACTION (id, jenis_paket, email, timestamp_dimulai, 
+                                       timestamp_berakhir, metode_bayar, nominal)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """
+            execute_query(insert_transaction_query, [
+                transaction_id, jenis_paket, user_email, start_date, end_date, 
+                metode_bayar, package['harga']
+            ], fetch=False)
             
-            # Add to PREMIUM
-            insert_premium_query = "INSERT INTO PREMIUM (email) VALUES (%s)"
-            execute_query(insert_premium_query, [user_email])
-        
-        # Update session
-        request.session['is_premium'] = True
+            # Update session to reflect premium status (verify from database)
+            premium_check = fetch_one("SELECT email FROM PREMIUM WHERE email = %s", [user_email])
+            if premium_check:
+                request.session['is_premium'] = True
+                # Also update the request object for immediate use
+                request.is_premium = True
+                
+                # Save session explicitly
+                request.session.save()
+                
+                print(f"✅ User {user_email} successfully subscribed and moved to PREMIUM")
+            else:
+                print(f"⚠️ Warning: Transaction created but user not in PREMIUM table")
 
-        return Response({
-            'message': 'Berlangganan berhasil!',
-            'transaction': {
-                'id': transaction_id,
-                'jenis_paket': jenis_paket,
-                'harga': package['harga'],
-                'metode_bayar': metode_bayar,
-                'tanggal_dimulai': now.isoformat(),
-                'tanggal_berakhir': end_date.isoformat()
-            }
-        }, status=status.HTTP_201_CREATED)
+            return Response({
+                'message': 'Berlangganan berhasil!',
+                'transaction': {
+                    'id': transaction_id,
+                    'jenis_paket': jenis_paket,
+                    'harga': package['harga'],
+                    'metode_bayar': metode_bayar,
+                    'tanggal_dimulai': start_date.isoformat(),
+                    'tanggal_berakhir': end_date.isoformat()
+                },
+                'user_premium_status': premium_check is not None
+            }, status=status.HTTP_201_CREATED)
+            
+        except Exception as db_error:
+            # Handle any unexpected database errors
+            print(f"❌ Database error during subscription: {str(db_error)}")
+            return Response({
+                'error': f'Terjadi kesalahan database: {str(db_error)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     except Exception as e:
+        print(f"❌ General error during subscription: {str(e)}")
         return Response({
             'error': f'Terjadi kesalahan: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -239,27 +266,31 @@ def get_subscription_history(request):
         if not email:
             return Response({'error': 'Not authenticated'}, status=status.HTTP_401_UNAUTHORIZED)
         
-        history = execute_query(
-            """SELECT t.jenis_paket, p.harga as harga, t.timestamp_dimulai, t.timestamp_berakhir, t.metode_bayar, t.nominal
-               FROM TRANSACTION t
-               JOIN PAKET p ON t.jenis_paket = p.jenis
-               WHERE t.email = %s
-               ORDER BY t.timestamp_dimulai DESC""",
-            [email]
-        )
+        transactions_query = """
+            SELECT id, jenis_paket, timestamp_dimulai, timestamp_berakhir, 
+                   metode_bayar, nominal
+            FROM TRANSACTION 
+            WHERE email = %s
+            ORDER BY timestamp_dimulai DESC
+        """
+        transactions = fetch_all(transactions_query, [email])
+        
+        transaction_data = []
+        for transaction in transactions:
+            transaction_data.append({
+                'id': str(transaction['id']),
+                'jenis': transaction['jenis_paket'],
+                'tanggal_dimulai': transaction['timestamp_dimulai'].strftime('%d %B %Y, %H:%M'),
+                'tanggal_berakhir': transaction['timestamp_berakhir'].strftime('%d %B %Y, %H:%M'),
+                'metode_bayar': transaction['metode_bayar'],
+                'nominal': transaction['nominal'],
+                'nominal_formatted': f"Rp{transaction['nominal']:,}".replace(',', '.'),
+                'status': 'Aktif' if transaction['timestamp_berakhir'] > datetime.now() else 'Berakhir'
+            })
         
         return Response({
-            'history': [
-                {
-                    'jenis_paket': transaction['jenis_paket'],
-                    'harga': transaction['harga'],
-                    'timestamp_dimulai': transaction['timestamp_dimulai'],
-                    'timestamp_berakhir': transaction['timestamp_berakhir'],
-                    'metode_bayar': transaction['metode_bayar'],
-                    'nominal': transaction['nominal'],
-                    'is_active': transaction['timestamp_berakhir'] > datetime.now()
-                } for transaction in history
-            ]
+            'transactions': transaction_data,
+            'total': len(transaction_data)
         }, status=status.HTTP_200_OK)
         
     except Exception as e:
@@ -401,4 +432,78 @@ def payment_methods(request):
     except Exception as e:
         return Response({
             'error': f'Terjadi kesalahan: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['GET'])
+@require_authentication
+def debug_user_status(request):
+    """
+    Debug endpoint to check user subscription status
+    GET /api/subscription/debug/
+    """
+    try:
+        user_email = request.user_email
+        
+        # Check all relevant data
+        user_data = fetch_one("SELECT email, nama FROM AKUN WHERE email = %s", [user_email])
+        is_premium_db = bool(fetch_one("SELECT email FROM PREMIUM WHERE email = %s", [user_email]))
+        is_nonpremium_db = bool(fetch_one("SELECT email FROM NONPREMIUM WHERE email = %s", [user_email]))
+        
+        # Check transactions
+        transactions = fetch_all("""
+            SELECT id, jenis_paket, timestamp_dimulai, timestamp_berakhir, metode_bayar, nominal
+            FROM TRANSACTION 
+            WHERE email = %s
+            ORDER BY timestamp_dimulai DESC
+        """, [user_email])
+        
+        # Check active transactions
+        active_transactions = fetch_all("""
+            SELECT id, jenis_paket, timestamp_dimulai, timestamp_berakhir
+            FROM TRANSACTION 
+            WHERE email = %s AND timestamp_berakhir > NOW()
+        """, [user_email])
+        
+        # Session data
+        session_data = {
+            'user_email': request.session.get('user_email'),
+            'is_premium': request.session.get('is_premium', False),
+            'user_type': request.session.get('user_type'),
+            'user_roles': request.session.get('user_roles', [])
+        }
+        
+        return Response({
+            'user': user_data,
+            'database_status': {
+                'is_premium': is_premium_db,
+                'is_nonpremium': is_nonpremium_db,
+            },
+            'session_status': session_data,
+            'transactions': {
+                'total': len(transactions),
+                'active': len(active_transactions),
+                'all_transactions': [
+                    {
+                        'id': str(t['id']),
+                        'jenis_paket': t['jenis_paket'],
+                        'start': t['timestamp_dimulai'].isoformat(),
+                        'end': t['timestamp_berakhir'].isoformat(),
+                        'metode_bayar': t['metode_bayar'],
+                        'nominal': t['nominal']
+                    } for t in transactions
+                ],
+                'active_transactions': [
+                    {
+                        'id': str(t['id']),
+                        'jenis_paket': t['jenis_paket'],
+                        'start': t['timestamp_dimulai'].isoformat(),
+                        'end': t['timestamp_berakhir'].isoformat()
+                    } for t in active_transactions
+                ]
+            }
+        })
+        
+    except Exception as e:
+        return Response({
+            'error': f'Debug failed: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

@@ -77,8 +77,8 @@ INSERT INTO PAKET (jenis, harga) VALUES
 -- ===================================
 
 INSERT INTO TRANSACTION (jenis_paket, email, timestamp_dimulai, timestamp_berakhir, metode_bayar, nominal) VALUES
-('1 Bulan', 'user1@marmut.com', '2024-01-01 10:00:00', '2024-02-01 10:00:00', 'Credit Card', 25000),
-('3 Bulan', 'user2@marmut.com', '2024-01-15 14:30:00', '2024-04-15 14:30:00', 'Bank Transfer', 65000),
+('1 Bulan', 'user1@marmut.com', '2024-01-01 10:00:00', '2025-02-01 10:00:00', 'Credit Card', 25000),
+('3 Bulan', 'user2@marmut.com', '2024-01-15 14:30:00', '2025-04-15 14:30:00', 'Bank Transfer', 65000),
 ('6 Bulan', 'artist1@marmut.com', '2024-02-01 09:15:00', '2024-08-01 09:15:00', 'E-Wallet', 120000),
 ('1 Tahun', 'artist2@marmut.com', '2024-01-10 16:45:00', '2025-01-10 16:45:00', 'Credit Card', 200000),
 ('1 Bulan', 'user3@marmut.com', '2024-02-15 11:20:00', '2024-03-15 11:20:00', 'Bank Transfer', 25000); 

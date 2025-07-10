@@ -1,5 +1,6 @@
 import uuid
 from datetime import date
+from django.db import transaction
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -65,16 +66,19 @@ def create_playlist(request):
         id_playlist = str(uuid.uuid4())
         tanggal_dibuat = date.today()
 
-        # Insert into PLAYLIST table first
-        execute_query("INSERT INTO PLAYLIST (id) VALUES (%s)", [id_playlist])
-        
-        # Insert into USER_PLAYLIST table
-        execute_query(
-            """INSERT INTO USER_PLAYLIST (email_pembuat, id_user_playlist, judul, deskripsi, 
-                                          jumlah_lagu, tanggal_dibuat, id_playlist, total_durasi)
-               VALUES (%s, %s, %s, %s, %s, %s, %s, %s)""",
-            [email, id_user_playlist, judul, deskripsi, 0, tanggal_dibuat, id_playlist, 0]
-        )
+        # Use transaction with proper database functions
+        with transaction.atomic():
+            # Insert into PLAYLIST table first
+            execute_query("INSERT INTO PLAYLIST (id) VALUES (%s)", [id_playlist], fetch=False)
+            
+            # Insert into USER_PLAYLIST table
+            execute_query(
+                """INSERT INTO USER_PLAYLIST (email_pembuat, id_user_playlist, judul, deskripsi, 
+                                              jumlah_lagu, tanggal_dibuat, id_playlist, total_durasi)
+                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s)""",
+                [email, id_user_playlist, judul, deskripsi, 0, tanggal_dibuat, id_playlist, 0],
+                fetch=False
+            )
         
         return Response({
             'message': 'Playlist berhasil dibuat',
@@ -175,11 +179,12 @@ def update_playlist(request, playlist_id):
             return Response({'error': 'Judul playlist harus diisi'}, status=status.HTTP_400_BAD_REQUEST)
         
         # Update playlist
-        execute_update_query(
+        execute_query(
             """UPDATE USER_PLAYLIST 
             SET judul = %s, deskripsi = %s
                WHERE id_user_playlist = %s""",
-            [judul, deskripsi, playlist_id]
+            [judul, deskripsi, playlist_id],
+            fetch=False
         )
         
         return Response({
@@ -214,9 +219,10 @@ def delete_playlist(request, playlist_id):
             return Response({'error': 'Unauthorized to delete this playlist'}, status=status.HTTP_403_FORBIDDEN)
         
         # Delete playlist (cascade will handle related records)
-        execute_delete_query(
+        execute_query(
             "DELETE FROM USER_PLAYLIST WHERE id_user_playlist = %s",
-            [playlist_id]
+            [playlist_id],
+            fetch=False
         )
         
         return Response({
@@ -272,7 +278,25 @@ def add_song_to_playlist(request, playlist_id):
         # Add song to playlist
         execute_query(
             "INSERT INTO PLAYLIST_SONG (id_playlist, id_song) VALUES (%s, %s)",
-            [playlist['id_playlist'], song_id]
+            [playlist['id_playlist'], song_id],
+            fetch=False
+        )
+        
+        # Update playlist counters
+        execute_query(
+            """UPDATE USER_PLAYLIST 
+               SET jumlah_lagu = (
+                   SELECT COUNT(*) FROM PLAYLIST_SONG WHERE id_playlist = %s
+               ),
+               total_durasi = (
+                   SELECT COALESCE(SUM(k.durasi), 0) 
+                   FROM PLAYLIST_SONG ps
+                   JOIN KONTEN k ON ps.id_song = k.id
+                   WHERE ps.id_playlist = %s
+               )
+               WHERE id_user_playlist = %s""",
+            [playlist['id_playlist'], playlist['id_playlist'], playlist_id],
+            fetch=False
         )
         
         return Response({
@@ -302,9 +326,27 @@ def remove_song_from_playlist(request, playlist_id, song_id):
             return Response({'error': 'Unauthorized to modify this playlist'}, status=status.HTTP_403_FORBIDDEN)
         
         # Remove song from playlist
-        execute_delete_query(
+        execute_query(
             "DELETE FROM PLAYLIST_SONG WHERE id_playlist = %s AND id_song = %s",
-            [playlist['id_playlist'], song_id]
+            [playlist['id_playlist'], song_id],
+            fetch=False
+        )
+        
+        # Update playlist counters
+        execute_query(
+            """UPDATE USER_PLAYLIST 
+               SET jumlah_lagu = (
+                   SELECT COUNT(*) FROM PLAYLIST_SONG WHERE id_playlist = %s
+               ),
+               total_durasi = (
+                   SELECT COALESCE(SUM(k.durasi), 0) 
+                   FROM PLAYLIST_SONG ps
+                   JOIN KONTEN k ON ps.id_song = k.id
+                   WHERE ps.id_playlist = %s
+               )
+               WHERE id_user_playlist = %s""",
+            [playlist['id_playlist'], playlist['id_playlist'], playlist_id],
+            fetch=False
         )
         
         return Response({

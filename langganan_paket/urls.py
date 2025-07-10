@@ -13,4 +13,5 @@ urlpatterns = [
     path('transaction-history/', views.transaction_history, name='transaction_history_api'),
     path('current/', views.current_subscription, name='current_subscription_api'),
     path('payment-methods/', views.payment_methods, name='payment_methods_api'),
+    path('debug/', views.debug_user_status, name='debug_user_status'),
 ]

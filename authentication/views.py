@@ -157,7 +157,6 @@ def current_user(request):
     try:
         user_email = request.user_email
         user_roles = request.user_roles
-        is_premium = request.is_premium
         
         # Check if user is a label
         label_query = "SELECT email FROM LABEL WHERE email = %s"
@@ -198,6 +197,17 @@ def current_user(request):
                 'error': 'User tidak ditemukan'
             }, status=status.HTTP_404_NOT_FOUND)
         
+        # Check premium status from database (not session)
+        premium_query = "SELECT email FROM PREMIUM WHERE email = %s"
+        is_premium = bool(fetch_one(premium_query, [user_email]))
+        
+        # Sync session with database if there's a mismatch
+        session_premium = request.session.get('is_premium', False)
+        if is_premium != session_premium:
+            request.session['is_premium'] = is_premium
+            request.session.save()
+            print(f"🔄 Synced session for {user_email}: premium status updated to {is_premium}")
+        
         return Response({
             'user': {
                 'email': user['email'],
@@ -237,20 +247,27 @@ def register_user(request):
         tanggal_lahir = data.get('tanggal_lahir')
         kota_asal = data.get('kota_asal')
         roles = data.get('roles') or data.get('role') or []
+        
         if not all([email, password, nama, gender is not None, tempat_lahir, tanggal_lahir, kota_asal]):
             return Response({'error': 'Semua field wajib diisi'}, status=status.HTTP_400_BAD_REQUEST)
+        
         check_user_query = "SELECT email FROM AKUN WHERE email = %s"
         existing_user = fetch_one(check_user_query, [email])
         if existing_user:
             return Response({'error': 'Email sudah terdaftar'}, status=status.HTTP_400_BAD_REQUEST)
+        
         check_label_query = "SELECT email FROM LABEL WHERE email = %s"
         existing_label = fetch_one(check_label_query, [email])
         if existing_label:
             return Response({'error': 'Email sudah terdaftar sebagai label'}, status=status.HTTP_400_BAD_REQUEST)
+        
         is_verified = len(roles) > 0
+        
         try:
             with transaction.atomic():
                 with connection.cursor() as cursor:
+                    # Insert user into AKUN table
+                    # Trigger set_non_premium will automatically add user to NONPREMIUM table
                     insert_user_query = """
                         INSERT INTO AKUN (email, password, nama, gender, tempat_lahir, tanggal_lahir, kota_asal, is_verified)
                         VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
@@ -259,24 +276,31 @@ def register_user(request):
                         email, password, nama, gender, tempat_lahir, 
                         tanggal_lahir, kota_asal, is_verified
                     ])
+                    
+                    # Handle role-specific tables
                     if 'artist' in roles:
                         copyright_id = str(uuid.uuid4())
                         cursor.execute("INSERT INTO PEMILIK_HAK_CIPTA (id, rate_royalti) VALUES (%s, %s)", [copyright_id, 50])
                         artist_id = str(uuid.uuid4())
                         insert_artist_query = "INSERT INTO ARTIST (id, email_akun, id_pemilik_hak_cipta) VALUES (%s, %s, %s)"
                         cursor.execute(insert_artist_query, [artist_id, email, copyright_id])
+                    
                     if 'songwriter' in roles:
                         copyright_id = str(uuid.uuid4())
                         cursor.execute("INSERT INTO PEMILIK_HAK_CIPTA (id, rate_royalti) VALUES (%s, %s)", [copyright_id, 50])
                         songwriter_id = str(uuid.uuid4())
                         insert_songwriter_query = "INSERT INTO SONGWRITER (id, email_akun, id_pemilik_hak_cipta) VALUES (%s, %s, %s)"
                         cursor.execute(insert_songwriter_query, [songwriter_id, email, copyright_id])
+                    
                     if 'podcaster' in roles:
                         insert_podcaster_query = "INSERT INTO PODCASTER (email) VALUES (%s)"
                         cursor.execute(insert_podcaster_query, [email])
+                        
             return Response({'message': 'Registrasi berhasil'}, status=status.HTTP_201_CREATED)
+            
         except Exception as e:
             return Response({'error': f'Terjadi kesalahan: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
     except Exception as e:
         return Response({'error': f'Terjadi kesalahan: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
