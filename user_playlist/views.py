@@ -273,7 +273,7 @@ def add_song_to_playlist(request, playlist_id):
         )
         
         if existing:
-            return Response({'error': 'Song already in playlist'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'warning': 'Song already in playlist'}, status=status.HTTP_200_OK)
         
         # Add song to playlist
         execute_query(

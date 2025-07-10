@@ -116,13 +116,13 @@ def play_song(request, song_id):
             execute_query(
                 """INSERT INTO AKUN_PLAY_SONG (email_pemain, id_song, waktu)
                    VALUES (%s, %s, %s)""",
-                [email, song_id, now]
+                [email, song_id, now], fetch=False
             )
             
             # Update total play count
             execute_query(
                 "UPDATE SONG SET total_play = total_play + 1 WHERE id_konten = %s",
-                [song_id]
+                [song_id], fetch=False
             )
             
             return Response({
@@ -174,7 +174,7 @@ def download_song(request, song_id):
         )
         
         if existing_download:
-            return Response({'error': 'Song already downloaded'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'message': 'Song already downloaded', 'warning': True}, status=status.HTTP_200_OK)
         
         # Add to downloads
         execute_insert_query(
@@ -188,7 +188,7 @@ def download_song(request, song_id):
         #     [song_id]
         # )
         
-        return Response({'message': 'Song downloaded successfully'}, status=status.HTTP_201_CREATED)
+        return Response({'message': 'Song downloaded successfully', 'success': True}, status=status.HTTP_201_CREATED)
         
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -233,7 +233,7 @@ def add_to_playlist(request, song_id):
         )
         
         if existing:
-            return Response({'error': 'Song already in playlist'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'message': 'Song already in playlist', 'warning': True}, status=status.HTTP_200_OK)
         
         # Add song to playlist
         execute_insert_query(
