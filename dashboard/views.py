@@ -118,6 +118,21 @@ def get_user_dashboard(user_email, user_roles):
                     ORDER BY k.tanggal_rilis DESC
                 """
                 songs = fetch_all(songs_query, [user_email])
+                
+                # Get albums for artists
+                albums_query = """
+                    SELECT DISTINCT al.id, al.judul, al.jumlah_lagu, al.total_durasi,
+                           (SELECT MIN(k.tanggal_rilis) 
+                            FROM KONTEN k 
+                            JOIN SONG s ON k.id = s.id_konten 
+                            WHERE s.id_album = al.id) as tanggal_rilis
+                    FROM ALBUM al
+                    JOIN SONG s ON al.id = s.id_album
+                    JOIN ARTIST a ON s.id_artist = a.id
+                    WHERE a.email_akun = %s
+                    ORDER BY tanggal_rilis DESC
+                """
+                albums = fetch_all(albums_query, [user_email])
             else:
                 # Songwriter
                 songs_query = """
@@ -132,6 +147,22 @@ def get_user_dashboard(user_email, user_roles):
                     ORDER BY k.tanggal_rilis DESC
                 """
                 songs = fetch_all(songs_query, [user_email])
+                
+                # Get albums for songwriters (albums that contain songs they wrote)
+                albums_query = """
+                    SELECT DISTINCT al.id, al.judul, al.jumlah_lagu, al.total_durasi,
+                           (SELECT MIN(k.tanggal_rilis) 
+                            FROM KONTEN k 
+                            JOIN SONG s ON k.id = s.id_konten 
+                            WHERE s.id_album = al.id) as tanggal_rilis
+                    FROM ALBUM al
+                    JOIN SONG s ON al.id = s.id_album
+                    JOIN SONGWRITER_WRITE_SONG sws ON s.id_konten = sws.id_song
+                    JOIN SONGWRITER sw ON sws.id_songwriter = sw.id
+                    WHERE sw.email_akun = %s
+                    ORDER BY tanggal_rilis DESC
+                """
+                albums = fetch_all(albums_query, [user_email])
             
             dashboard_data['songs'] = []
             for song in songs:
@@ -143,6 +174,16 @@ def get_user_dashboard(user_email, user_roles):
                     'durasi': song['durasi'],
                     'total_play': song['total_play'],
                     'total_download': song['total_download']
+                })
+            
+            dashboard_data['albums'] = []
+            for album in albums:
+                dashboard_data['albums'].append({
+                    'id': str(album['id']),
+                    'judul': album['judul'],
+                    'jumlah_lagu': album['jumlah_lagu'],
+                    'total_durasi': album['total_durasi'],
+                    'tanggal_rilis': album['tanggal_rilis'].isoformat() if album['tanggal_rilis'] else None
                 })
         
         if 'podcaster' in user_roles:
