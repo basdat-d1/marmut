@@ -265,11 +265,6 @@ def get_label_dashboard(user_email):
             'email': label['email'],
             'nama': label['nama'],
             'kontak': label['kontak'],
-            'is_label': True,
-            'is_artist': False,
-            'is_songwriter': False,
-            'is_podcaster': False,
-            'is_premium': False,
             'albums': [],
             'total_royalty': float(total_royalty)
         }

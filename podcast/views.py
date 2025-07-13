@@ -35,15 +35,16 @@ def get_user_podcasts(request):
         if not podcaster:
             return Response({'error': 'User is not a podcaster'}, status=status.HTTP_403_FORBIDDEN)
         
-        # Get user's podcasts
+        # Get user's podcasts with total episode duration
         podcasts = execute_query(
-            """SELECT p.id_konten, k.judul, k.durasi, k.tanggal_rilis,
-                      COUNT(e.id_episode) as episode_count
+            """SELECT p.id_konten, k.judul, k.tanggal_rilis,
+                      COUNT(e.id_episode) as episode_count,
+                      COALESCE(SUM(e.durasi), 0) as total_durasi
         FROM PODCAST p
         JOIN KONTEN k ON p.id_konten = k.id
         LEFT JOIN EPISODE e ON p.id_konten = e.id_konten_podcast
                WHERE p.email_podcaster = %s
-               GROUP BY p.id_konten, k.judul, k.durasi, k.tanggal_rilis
+               GROUP BY p.id_konten, k.judul, k.tanggal_rilis
                ORDER BY k.tanggal_rilis DESC""",
             [email]
         )
@@ -53,7 +54,7 @@ def get_user_podcasts(request):
                 {
                     'id': podcast['id_konten'],
                     'judul': podcast['judul'],
-                    'total_durasi': convert_duration(podcast['durasi']),
+                    'total_durasi': convert_duration(podcast['total_durasi']),
                     'episode_count': podcast['episode_count'],
                     'tanggal_rilis': podcast['tanggal_rilis']
                 } for podcast in podcasts
@@ -281,7 +282,7 @@ def create_episode(request, podcast_id):
 def delete_episode(request, podcast_id, episode_id):
     """Delete an episode"""
     try:
-        email = request.session.get('email')
+        email = request.user_email
         if not email:
             return Response({'error': 'Not authenticated'}, status=status.HTTP_401_UNAUTHORIZED)
         
@@ -314,6 +315,111 @@ def delete_episode(request, podcast_id, episode_id):
         
         return Response({
             'message': 'Episode deleted successfully'
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['GET'])
+@require_authentication
+def get_podcast_detail(request, podcast_id):
+    """Get detailed information about a specific podcast"""
+    try:
+        email = request.user_email
+        if not email:
+            return Response({'error': 'Not authenticated'}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        # Check if user owns the podcast
+        podcast = execute_single_query(
+            """SELECT p.email_podcaster, k.judul, k.tanggal_rilis, k.tahun
+               FROM PODCAST p
+               JOIN KONTEN k ON p.id_konten = k.id
+               WHERE p.id_konten = %s""",
+            [podcast_id]
+        )
+        
+        if not podcast:
+            return Response({'error': 'Podcast not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        if podcast['email_podcaster'] != email:
+            return Response({'error': 'Unauthorized to view this podcast'}, status=status.HTTP_403_FORBIDDEN)
+        
+        # Get podcast genres
+        genres = execute_query(
+            "SELECT genre FROM GENRE WHERE id_konten = %s ORDER BY genre",
+            [podcast_id]
+        )
+        
+        return Response({
+            'podcast': {
+                'id': podcast_id,
+                'judul': podcast['judul'],
+                'genres': [genre['genre'] for genre in genres],
+                'tanggal_rilis': podcast['tanggal_rilis'],
+                'tahun': podcast['tahun']
+            }
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['PUT'])
+@require_authentication
+def update_podcast(request, podcast_id):
+    """Update a podcast"""
+    try:
+        email = request.user_email
+        if not email:
+            return Response({'error': 'Not authenticated'}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        # Check if user owns the podcast
+        podcast = execute_single_query(
+            "SELECT email_podcaster FROM PODCAST WHERE id_konten = %s",
+            [podcast_id]
+        )
+        
+        if not podcast:
+            return Response({'error': 'Podcast not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        if podcast['email_podcaster'] != email:
+            return Response({'error': 'Unauthorized to update this podcast'}, status=status.HTTP_403_FORBIDDEN)
+        
+        data = request.data
+        podcast_title = data.get('judul', '').strip()
+        podcast_genres = data.get('genres', [])
+        if not isinstance(podcast_genres, list):
+            podcast_genres = []
+        
+        if not podcast_title or not podcast_genres:
+            return Response({'error': 'Title and at least one genre are required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Update podcast title in KONTEN table
+        execute_query(
+            "UPDATE KONTEN SET judul = %s WHERE id = %s",
+            [podcast_title, podcast_id]
+        )
+        
+        # Delete existing genres and insert new ones
+        execute_delete_query(
+            "DELETE FROM GENRE WHERE id_konten = %s",
+            [podcast_id]
+        )
+        
+        # Insert new genres
+        for genre in podcast_genres:
+            execute_insert_query(
+                """INSERT INTO GENRE (id_konten, genre)
+                   VALUES (%s, %s)""",
+                [podcast_id, genre]
+            )
+        
+        return Response({
+            'message': 'Podcast updated successfully',
+            'podcast': {
+                'id': podcast_id,
+                'judul': podcast_title,
+                'genres': podcast_genres
+            }
         }, status=status.HTTP_200_OK)
         
     except Exception as e:

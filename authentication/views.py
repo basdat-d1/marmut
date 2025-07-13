@@ -64,14 +64,9 @@ def login_user(request):
             
             return Response({
                 'message': 'Login berhasil',
-                'user': {
+                'label': {
                     'email': label['email'],
                     'nama': label['nama'],
-                    'is_label': True,
-                    'is_artist': False,
-                    'is_songwriter': False,
-                    'is_podcaster': False,
-                    'is_premium': False,
                     'kontak': label['kontak']
                 }
             })
@@ -171,14 +166,9 @@ def current_user(request):
             label = fetch_one(label_query, [user_email])
             
             return Response({
-                'user': {
+                'label': {
                     'email': label['email'],
                     'nama': label['nama'],
-                    'is_label': True,
-                    'is_artist': False,
-                    'is_songwriter': False,
-                    'is_podcaster': False,
-                    'is_premium': False,
                     'kontak': label['kontak']
                 }
             })
