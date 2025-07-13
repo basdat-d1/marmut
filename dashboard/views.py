@@ -104,6 +104,11 @@ def get_user_dashboard(user_email, user_roles):
                 'total_durasi': playlist['total_durasi']
             })
         
+        # Initialize empty arrays for all users
+        dashboard_data['songs'] = []
+        dashboard_data['albums'] = []
+        dashboard_data['podcasts'] = []
+        
         if 'artist' in user_roles or 'songwriter' in user_roles:
             # Get songs for artists/songwriters
             if 'artist' in user_roles:
@@ -164,7 +169,7 @@ def get_user_dashboard(user_email, user_roles):
                 """
                 albums = fetch_all(albums_query, [user_email])
             
-            dashboard_data['songs'] = []
+            # Update songs array (already initialized)
             for song in songs:
                 dashboard_data['songs'].append({
                     'id': str(song['id']),
@@ -176,7 +181,7 @@ def get_user_dashboard(user_email, user_roles):
                     'total_download': song['total_download']
                 })
             
-            dashboard_data['albums'] = []
+            # Update albums array (already initialized)
             for album in albums:
                 dashboard_data['albums'].append({
                     'id': str(album['id']),
@@ -200,7 +205,7 @@ def get_user_dashboard(user_email, user_roles):
             """
             podcasts = fetch_all(podcasts_query, [user_email])
             
-            dashboard_data['podcasts'] = []
+            # Update podcasts array (already initialized)
             for podcast in podcasts:
                 dashboard_data['podcasts'].append({
                     'id': str(podcast['id']),
