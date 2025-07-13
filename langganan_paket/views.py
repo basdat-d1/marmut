@@ -186,10 +186,6 @@ def subscribe_package(request):
                 
                 # Save session explicitly
                 request.session.save()
-                
-                print(f"✅ User {user_email} successfully subscribed and moved to PREMIUM")
-            else:
-                print(f"⚠️ Warning: Transaction created but user not in PREMIUM table")
 
             return Response({
                 'message': 'Berlangganan berhasil!',
@@ -206,13 +202,11 @@ def subscribe_package(request):
             
         except Exception as db_error:
             # Handle any unexpected database errors
-            print(f"❌ Database error during subscription: {str(db_error)}")
             return Response({
                 'error': f'Terjadi kesalahan database: {str(db_error)}'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     except Exception as e:
-        print(f"❌ General error during subscription: {str(e)}")
         return Response({
             'error': f'Terjadi kesalahan: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -434,76 +428,4 @@ def payment_methods(request):
             'error': f'Terjadi kesalahan: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-@api_view(['GET'])
-@require_authentication
-def debug_user_status(request):
-    """
-    Debug endpoint to check user subscription status
-    GET /api/subscription/debug/
-    """
-    try:
-        user_email = request.user_email
-        
-        # Check all relevant data
-        user_data = fetch_one("SELECT email, nama FROM AKUN WHERE email = %s", [user_email])
-        is_premium_db = bool(fetch_one("SELECT email FROM PREMIUM WHERE email = %s", [user_email]))
-        is_nonpremium_db = bool(fetch_one("SELECT email FROM NONPREMIUM WHERE email = %s", [user_email]))
-        
-        # Check transactions
-        transactions = fetch_all("""
-            SELECT id, jenis_paket, timestamp_dimulai, timestamp_berakhir, metode_bayar, nominal
-            FROM TRANSACTION 
-            WHERE email = %s
-            ORDER BY timestamp_dimulai DESC
-        """, [user_email])
-        
-        # Check active transactions
-        active_transactions = fetch_all("""
-            SELECT id, jenis_paket, timestamp_dimulai, timestamp_berakhir
-            FROM TRANSACTION 
-            WHERE email = %s AND timestamp_berakhir > NOW()
-        """, [user_email])
-        
-        # Session data
-        session_data = {
-            'user_email': request.session.get('user_email'),
-            'is_premium': request.session.get('is_premium', False),
-            'user_type': request.session.get('user_type'),
-            'user_roles': request.session.get('user_roles', [])
-        }
-        
-        return Response({
-            'user': user_data,
-            'database_status': {
-                'is_premium': is_premium_db,
-                'is_nonpremium': is_nonpremium_db,
-            },
-            'session_status': session_data,
-            'transactions': {
-                'total': len(transactions),
-                'active': len(active_transactions),
-                'all_transactions': [
-                    {
-                        'id': str(t['id']),
-                        'jenis_paket': t['jenis_paket'],
-                        'start': t['timestamp_dimulai'].isoformat(),
-                        'end': t['timestamp_berakhir'].isoformat(),
-                        'metode_bayar': t['metode_bayar'],
-                        'nominal': t['nominal']
-                    } for t in transactions
-                ],
-                'active_transactions': [
-                    {
-                        'id': str(t['id']),
-                        'jenis_paket': t['jenis_paket'],
-                        'start': t['timestamp_dimulai'].isoformat(),
-                        'end': t['timestamp_berakhir'].isoformat()
-                    } for t in active_transactions
-                ]
-            }
-        })
-        
-    except Exception as e:
-        return Response({
-            'error': f'Debug failed: {str(e)}'
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+

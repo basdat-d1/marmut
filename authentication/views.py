@@ -206,8 +206,7 @@ def current_user(request):
         if is_premium != session_premium:
             request.session['is_premium'] = is_premium
             request.session.save()
-            print(f"🔄 Synced session for {user_email}: premium status updated to {is_premium}")
-        
+                
         return Response({
             'user': {
                 'email': user['email'],

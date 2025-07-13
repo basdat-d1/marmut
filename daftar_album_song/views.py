@@ -4,6 +4,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from utils.authentication import require_authentication
 from utils.database import execute_query, execute_single_query, execute_insert_query, execute_update_query, execute_delete_query
+from django.db import transaction
 import uuid
 
 @api_view(['GET'])
@@ -12,7 +13,13 @@ def get_albums(request):
     """Get all albums"""
     try:
         albums = execute_query(
-            """SELECT a.id, a.judul, l.nama as label, a.jumlah_lagu, a.total_durasi
+            """SELECT a.id, a.judul, l.nama as label, a.jumlah_lagu, a.total_durasi,
+                      (SELECT k.tanggal_rilis 
+                       FROM KONTEN k 
+                       JOIN SONG s ON k.id = s.id_konten 
+                       WHERE s.id_album = a.id 
+                       ORDER BY k.tanggal_rilis ASC 
+                       LIMIT 1) as tanggal_rilis
                FROM ALBUM a
                JOIN LABEL l ON a.id_label = l.id
                ORDER BY a.judul""",
@@ -26,7 +33,8 @@ def get_albums(request):
                     'judul': album['judul'],
                     'label': album['label'],
                     'jumlah_lagu': album['jumlah_lagu'],
-                    'total_durasi': album['total_durasi']
+                    'total_durasi': album['total_durasi'],
+                    'tanggal_rilis': album['tanggal_rilis'].strftime('%Y-%m-%d') if album['tanggal_rilis'] else None
                 } for album in albums
             ]
         }, status=status.HTTP_200_OK)
@@ -34,11 +42,51 @@ def get_albums(request):
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-@api_view(['GET'])
+@api_view(['GET', 'DELETE'])
 @require_authentication
 def get_album_detail(request, album_id):
-    """Get album details with songs"""
+    """Get album details with songs or delete album"""
     try:
+        if request.method == 'DELETE':
+            # Handle DELETE request - same logic as delete_album
+            email = request.user_email
+            if not email:
+                return Response({'error': 'Not authenticated'}, status=status.HTTP_401_UNAUTHORIZED)
+            
+            # Check if user is artist or songwriter
+            artist = execute_single_query(
+                "SELECT id FROM ARTIST WHERE email_akun = %s",
+                [email]
+            )
+            
+            songwriter = execute_single_query(
+                "SELECT id FROM SONGWRITER WHERE email_akun = %s",
+                [email]
+            )
+            
+            if not artist and not songwriter:
+                return Response({'error': 'Only artists and songwriters can delete albums'}, status=status.HTTP_403_FORBIDDEN)
+            
+            # Check if album exists and user has permission
+            album = execute_single_query(
+                """SELECT a.id FROM ALBUM a
+                   JOIN SONG s ON a.id = s.id_album
+                   WHERE a.id = %s AND (s.id_artist IN (SELECT id FROM ARTIST WHERE email_akun = %s) OR
+                                       s.id_konten IN (SELECT id_song FROM SONGWRITER_WRITE_SONG WHERE id_songwriter IN (SELECT id FROM SONGWRITER WHERE email_akun = %s)))""",
+                [album_id, email, email]
+            )
+            
+            if not album:
+                return Response({'error': 'Album tidak ditemukan atau tidak memiliki izin'}, status=status.HTTP_404_NOT_FOUND)
+            
+            # Delete album (cascade will handle related records)
+            execute_query("DELETE FROM ALBUM WHERE id = %s", [album_id], fetch=False)
+            
+            return Response({
+                'message': 'Album berhasil dihapus'
+            }, status=status.HTTP_200_OK)
+        
+        # Handle GET request - original logic
         # Get album info
         album = execute_single_query(
             """SELECT a.id, a.judul, l.nama as label, a.jumlah_lagu, a.total_durasi
@@ -217,9 +265,15 @@ def get_user_albums(request):
         if not artist and not songwriter:
             return Response({'error': 'Only artists and songwriters can manage albums'}, status=status.HTTP_403_FORBIDDEN)
         
-        # Get albums where user is involved
+        # Get albums where user is involved with tanggal_rilis from first song
         albums = execute_query(
-            """SELECT DISTINCT a.id, a.judul, l.nama as label, a.jumlah_lagu, a.total_durasi
+            """SELECT DISTINCT a.id, a.judul, l.nama as label, a.jumlah_lagu, a.total_durasi,
+                      (SELECT k.tanggal_rilis 
+                       FROM KONTEN k 
+                       JOIN SONG s2 ON k.id = s2.id_konten 
+                       WHERE s2.id_album = a.id 
+                       ORDER BY k.tanggal_rilis ASC 
+                       LIMIT 1) as tanggal_rilis
                FROM ALBUM a
                JOIN LABEL l ON a.id_label = l.id
                JOIN SONG s ON a.id = s.id_album
@@ -236,7 +290,8 @@ def get_user_albums(request):
                     'judul': album['judul'],
                     'label': album['label'],
                     'jumlah_lagu': album['jumlah_lagu'],
-                    'total_durasi': album['total_durasi']
+                    'total_durasi': album['total_durasi'],
+                    'tanggal_rilis': album['tanggal_rilis'].strftime('%Y-%m-%d') if album['tanggal_rilis'] else None
                 } for album in albums
             ]
         }, status=status.HTTP_200_OK)
@@ -288,10 +343,12 @@ def create_album(request):
         
         # Create album
         album_id = str(uuid.uuid4())
-        execute_query(
-            "INSERT INTO ALBUM (id, judul, id_label, jumlah_lagu, total_durasi) VALUES (%s, %s, %s, %s, %s)",
-            [album_id, judul_album, label_id, 0, 0]
-        )
+        with transaction.atomic():
+            execute_query(
+                "INSERT INTO ALBUM (id, judul, id_label, jumlah_lagu, total_durasi) VALUES (%s, %s, %s, %s, %s)",
+                [album_id, judul_album, label_id, 0, 0],
+                fetch=False
+            )
         
         return Response({
             'message': 'Album berhasil dibuat',
@@ -321,8 +378,15 @@ def create_song(request):
         genres = data.get('genres', [])
         durasi = data.get('durasi')
         
+        # Validate required fields
         if not all([album_id, judul_lagu, durasi]):
             return Response({'error': 'Semua field wajib diisi'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Convert durasi to integer if it's a string
+        try:
+            durasi = int(durasi)
+        except (ValueError, TypeError):
+            return Response({'error': 'Durasi harus berupa angka'}, status=status.HTTP_400_BAD_REQUEST)
         
         # Check if user is artist or songwriter
         artist = execute_single_query(
@@ -338,6 +402,23 @@ def create_song(request):
         if not artist and not songwriter:
             return Response({'error': 'Only artists and songwriters can create songs'}, status=status.HTTP_403_FORBIDDEN)
         
+        # If user is an artist and no artist_id provided, use current user's artist id
+        if artist and not artist_id:
+            artist_id = artist['id']
+        
+        # If user is songwriter and no artist_id provided, artist_id is required
+        if songwriter and not artist and not artist_id:
+            return Response({'error': 'Artist harus dipilih'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Validate artist_id exists if provided
+        if artist_id:
+            artist_exists = execute_single_query(
+                "SELECT id FROM ARTIST WHERE id = %s",
+                [artist_id]
+            )
+            if not artist_exists:
+                return Response({'error': 'Artist tidak ditemukan'}, status=status.HTTP_404_NOT_FOUND)
+        
         # Check if album exists
         album = execute_single_query(
             "SELECT id FROM ALBUM WHERE id = %s",
@@ -351,42 +432,40 @@ def create_song(request):
         song_id = str(uuid.uuid4())
         now = datetime.now()
         
-        # Insert into KONTEN
-        execute_query(
-            """INSERT INTO KONTEN (id, judul, tanggal_rilis, tahun, durasi) 
-               VALUES (%s, %s, %s, %s, %s)""",
-            [song_id, judul_lagu, now.date(), now.year, durasi]
-        )
-        
-        # Insert into SONG
-        execute_query(
-            """INSERT INTO SONG (id_konten, id_artist, id_album, total_play, total_download) 
-               VALUES (%s, %s, %s, %s, %s)""",
-            [song_id, artist_id, album_id, 0, 0]
-        )
-        
-        # Add genres
-        for genre in genres:
+        with transaction.atomic():
+            # Insert into KONTEN
             execute_query(
-                "INSERT INTO GENRE (id_konten, genre) VALUES (%s, %s)",
-                [song_id, genre]
+                """INSERT INTO KONTEN (id, judul, tanggal_rilis, tahun, durasi) 
+                   VALUES (%s, %s, %s, %s, %s)""",
+                [song_id, judul_lagu, now.date(), now.year, durasi],
+                fetch=False
             )
-        
-        # Add songwriters
-        for songwriter_id in songwriter_ids:
+            
+            # Insert into SONG
             execute_query(
-                "INSERT INTO SONGWRITER_WRITE_SONG (id_songwriter, id_song) VALUES (%s, %s)",
-                [songwriter_id, song_id]
+                """INSERT INTO SONG (id_konten, id_artist, id_album, total_play, total_download) 
+                   VALUES (%s, %s, %s, %s, %s)""",
+                [song_id, artist_id, album_id, 0, 0],
+                fetch=False
             )
-        
-        # Update album stats
-        execute_query(
-            """UPDATE ALBUM 
-               SET jumlah_lagu = jumlah_lagu + 1, 
-                   total_durasi = total_durasi + %s 
-               WHERE id = %s""",
-            [durasi, album_id]
-        )
+            
+            # Add genres
+            for genre in genres:
+                execute_query(
+                    "INSERT INTO GENRE (id_konten, genre) VALUES (%s, %s)",
+                    [song_id, genre],
+                    fetch=False
+                )
+            
+            # Add songwriters
+            for songwriter_id in songwriter_ids:
+                execute_query(
+                    "INSERT INTO SONGWRITER_WRITE_SONG (id_songwriter, id_song) VALUES (%s, %s)",
+                    [songwriter_id, song_id],
+                    fetch=False
+                )
+            
+            # Album stats are automatically updated by database trigger
         
         return Response({
             'message': 'Song berhasil dibuat',
@@ -435,7 +514,7 @@ def delete_album(request, album_id):
             return Response({'error': 'Album tidak ditemukan atau tidak memiliki izin'}, status=status.HTTP_404_NOT_FOUND)
         
         # Delete album (cascade will handle related records)
-        execute_query("DELETE FROM ALBUM WHERE id = %s", [album_id])
+        execute_query("DELETE FROM ALBUM WHERE id = %s", [album_id], fetch=False)
         
         return Response({
             'message': 'Album berhasil dihapus'
@@ -483,17 +562,10 @@ def delete_song(request, song_id):
         if not song:
             return Response({'error': 'Song tidak ditemukan atau tidak memiliki izin'}, status=status.HTTP_404_NOT_FOUND)
         
-        # Update album stats before deleting
-        execute_query(
-            """UPDATE ALBUM 
-               SET jumlah_lagu = jumlah_lagu - 1, 
-                   total_durasi = total_durasi - %s 
-               WHERE id = %s""",
-            [song['durasi'], song['id_album']]
-        )
+        # Album stats are automatically updated by database trigger
         
         # Delete song (cascade will handle related records)
-        execute_query("DELETE FROM KONTEN WHERE id = %s", [song_id])
+        execute_query("DELETE FROM KONTEN WHERE id = %s", [song_id], fetch=False)
         
         return Response({
             'message': 'Song berhasil dihapus'
@@ -525,7 +597,13 @@ def get_label_albums(request):
         
         # Get albums owned by the label
         albums = execute_query(
-            """SELECT a.id, a.judul, a.jumlah_lagu, a.total_durasi
+            """SELECT a.id, a.judul, a.jumlah_lagu, a.total_durasi,
+                      (SELECT k.tanggal_rilis 
+                       FROM KONTEN k 
+                       JOIN SONG s ON k.id = s.id_konten 
+                       WHERE s.id_album = a.id 
+                       ORDER BY k.tanggal_rilis ASC 
+                       LIMIT 1) as tanggal_rilis
                FROM ALBUM a
                WHERE a.id_label = %s
                ORDER BY a.judul""",
@@ -538,7 +616,8 @@ def get_label_albums(request):
                     'id': album['id'],
                     'judul': album['judul'],
                     'jumlah_lagu': album['jumlah_lagu'],
-                    'total_durasi': album['total_durasi']
+                    'total_durasi': album['total_durasi'],
+                    'tanggal_rilis': album['tanggal_rilis'].strftime('%Y-%m-%d') if album['tanggal_rilis'] else None
                 } for album in albums
             ]
         }, status=status.HTTP_200_OK)
@@ -639,7 +718,7 @@ def delete_label_album(request, album_id):
             return Response({'error': 'Album tidak ditemukan atau tidak memiliki izin'}, status=status.HTTP_404_NOT_FOUND)
         
         # Delete album (cascade will handle related records)
-        execute_query("DELETE FROM ALBUM WHERE id = %s", [album_id])
+        execute_query("DELETE FROM ALBUM WHERE id = %s", [album_id], fetch=False)
         
         return Response({
             'message': 'Album berhasil dihapus'
@@ -682,17 +761,10 @@ def delete_label_song(request, song_id):
         if not song:
             return Response({'error': 'Song tidak ditemukan atau tidak memiliki izin'}, status=status.HTTP_404_NOT_FOUND)
         
-        # Update album stats before deleting
-        execute_query(
-            """UPDATE ALBUM 
-               SET jumlah_lagu = jumlah_lagu - 1, 
-                   total_durasi = total_durasi - %s 
-               WHERE id = %s""",
-            [song['durasi'], song['id_album']]
-        )
+        # Album stats are automatically updated by database trigger
         
         # Delete song (cascade will handle related records)
-        execute_query("DELETE FROM KONTEN WHERE id = %s", [song_id])
+        execute_query("DELETE FROM KONTEN WHERE id = %s", [song_id], fetch=False)
         
         return Response({
             'message': 'Song berhasil dihapus'
@@ -772,5 +844,57 @@ def get_user_songs(request):
             ]
         }, status=status.HTTP_200_OK)
         
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['GET'])
+@require_authentication
+def get_all_labels(request):
+    """Get all labels"""
+    try:
+        labels = execute_query(
+            "SELECT id, nama FROM LABEL ORDER BY nama",
+            []
+        )
+        return Response({'labels': labels}, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['GET'])
+@require_authentication
+def get_all_artists(request):
+    """Get all artists"""
+    try:
+        artists = execute_query(
+            "SELECT id, nama FROM ARTIST a JOIN AKUN ak ON a.email_akun = ak.email ORDER BY nama",
+            []
+        )
+        return Response({'artists': artists}, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['GET'])
+@require_authentication
+def get_all_songwriters(request):
+    """Get all songwriters"""
+    try:
+        songwriters = execute_query(
+            "SELECT id, nama FROM SONGWRITER s JOIN AKUN ak ON s.email_akun = ak.email ORDER BY nama",
+            []
+        )
+        return Response({'songwriters': songwriters}, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['GET'])
+@require_authentication
+def get_all_genres(request):
+    """Get all unique genres"""
+    try:
+        genres = execute_query(
+            "SELECT DISTINCT genre FROM GENRE ORDER BY genre",
+            []
+        )
+        return Response({'genres': [g['genre'] for g in genres]}, status=status.HTTP_200_OK)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
