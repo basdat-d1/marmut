@@ -35,7 +35,7 @@ def get_song_detail(request, song_id):
         
         if not song:
             return Response({'error': 'Song not found'}, status=status.HTTP_404_NOT_FOUND)
-    
+        
         # If user is a label, check if this song belongs to their album
         label = execute_single_query(
             "SELECT id FROM LABEL WHERE email = %s",

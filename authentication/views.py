@@ -172,7 +172,7 @@ def current_user(request):
                 'error': 'User tidak ditemukan'
             }, status=status.HTTP_404_NOT_FOUND)
         
-        # Check premium status from database
+        # Check premium status from database (not session)
         premium_query = "SELECT email FROM PREMIUM WHERE email = %s"
         is_premium = bool(fetch_one(premium_query, [user_email]))
         

@@ -48,6 +48,7 @@ def get_album_detail(request, album_id):
     """Get album details with songs or delete album"""
     try:
         if request.method == 'DELETE':
+            # Handle DELETE request
             email = request.user_email
             if not email:
                 return Response({'error': 'Not authenticated'}, status=status.HTTP_401_UNAUTHORIZED)
@@ -78,13 +79,14 @@ def get_album_detail(request, album_id):
             if not album:
                 return Response({'error': 'Album tidak ditemukan atau tidak memiliki izin'}, status=status.HTTP_404_NOT_FOUND)
             
-            # Delete album (cascade will handle related records)
+            # Delete album
             execute_query("DELETE FROM ALBUM WHERE id = %s", [album_id], fetch=False)
             
             return Response({
                 'message': 'Album berhasil dihapus'
             }, status=status.HTTP_200_OK)
         
+        # Handle GET request
         # Get album info
         album = execute_single_query(
             """SELECT a.id, a.judul, l.nama as label, a.jumlah_lagu, a.total_durasi
@@ -449,9 +451,7 @@ def create_song(request):
                     "INSERT INTO SONGWRITER_WRITE_SONG (id_songwriter, id_song) VALUES (%s, %s)",
                     [songwriter_id, song_id],
                     fetch=False
-                )
-            
-            # Album stats are automatically updated by database trigger
+                )           
         
         return Response({
             'message': 'Song berhasil dibuat',
@@ -495,7 +495,7 @@ def delete_album(request, album_id):
         if not album:
             return Response({'error': 'Album tidak ditemukan atau tidak memiliki izin'}, status=status.HTTP_404_NOT_FOUND)
         
-        # Delete album (cascade will handle related records)
+        # Delete album
         execute_query("DELETE FROM ALBUM WHERE id = %s", [album_id], fetch=False)
         
         return Response({
@@ -539,7 +539,7 @@ def delete_song(request, song_id):
         
         if not song:
             return Response({'error': 'Song tidak ditemukan atau tidak memiliki izin'}, status=status.HTTP_404_NOT_FOUND)
-        
+    
         # Delete song
         execute_query("DELETE FROM KONTEN WHERE id = %s", [song_id], fetch=False)
         
@@ -687,7 +687,7 @@ def delete_label_album(request, album_id):
         if not album:
             return Response({'error': 'Album tidak ditemukan atau tidak memiliki izin'}, status=status.HTTP_404_NOT_FOUND)
         
-        # Delete album (cascade will handle related records)
+        # Delete album
         execute_query("DELETE FROM ALBUM WHERE id = %s", [album_id], fetch=False)
         
         return Response({
@@ -726,7 +726,8 @@ def delete_label_song(request, song_id):
         
         if not song:
             return Response({'error': 'Song tidak ditemukan atau tidak memiliki izin'}, status=status.HTTP_404_NOT_FOUND)
-
+    
+        
         # Delete song
         execute_query("DELETE FROM KONTEN WHERE id = %s", [song_id], fetch=False)
         
