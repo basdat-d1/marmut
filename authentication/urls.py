@@ -11,5 +11,5 @@ urlpatterns = [
     path('register/user/', views.register_user, name='register_user'),
     path('register/label/', views.register_label, name='register_label'),
 
-    path('csrf-token/', views.get_csrf_token, name='csrf_token'),
+    path('get-csrf-token/', views.get_csrf_token, name='csrf_token'),
 ]

@@ -31,7 +31,6 @@ DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,.vercel.app').split(',')
 
 # CORS settings
-CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000", 
@@ -48,6 +47,7 @@ CORS_ALLOW_HEADERS = [
     'user-agent',
     'x-csrftoken',
     'x-requested-with',
+    'cookie',
 ]
 CORS_ALLOW_METHODS = [
     'DELETE',
@@ -60,6 +60,30 @@ CORS_ALLOW_METHODS = [
 CORS_EXPOSE_HEADERS = [
     'content-type',
     'x-csrftoken',
+    'set-cookie',
+]
+
+CORS_PREFLIGHT_MAX_AGE = 86400
+
+# Session settings for cross-origin requests
+SESSION_COOKIE_SAMESITE = "None"
+SESSION_COOKIE_SECURE = True
+SESSION_COOKIE_DOMAIN = None
+SESSION_COOKIE_HTTPONLY = False
+SESSION_COOKIE_AGE = 86400 * 30
+SESSION_SAVE_EVERY_REQUEST = True
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+
+
+SESSION_ENGINE = "django.contrib.sessions.backends.db"
+
+CSRF_COOKIE_SAMESITE = "None"
+CSRF_COOKIE_SECURE = True
+CSRF_COOKIE_DOMAIN = None
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "https://marmut-music.vercel.app"
 ]
 
 # Application definition
@@ -176,15 +200,6 @@ STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-# Session Configuration
-SESSION_ENGINE = 'django.contrib.sessions.backends.db'
-SESSION_COOKIE_AGE = 86400  # 24 hours
-SESSION_COOKIE_DOMAIN = os.getenv('SESSION_COOKIE_DOMAIN')
-SESSION_COOKIE_SECURE = os.getenv('SESSION_COOKIE_SECURE')
-SESSION_COOKIE_HTTPONLY = True
-SESSION_COOKIE_SAMESITE = 'Lax'
-SESSION_SAVE_EVERY_REQUEST = True
 
 # REST Framework Configuration
 REST_FRAMEWORK = {
