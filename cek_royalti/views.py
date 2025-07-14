@@ -7,10 +7,6 @@ from utils.authentication import require_authentication
 @api_view(['GET'])
 @require_authentication
 def get_royalty_info(request):
-    """
-    Feature 14: Get royalty information for artist or songwriter
-    GET /api/royalty/
-    """
     try:
         email = request.user_email
         if not email:
@@ -88,7 +84,7 @@ def get_royalty_info(request):
                 'total_play': item['total_play'],
                 'total_download': item['total_download'],
                 'royalty_play': item['total_royalti'],
-                'royalty_download': 0,  # Download royalty can be calculated separately if needed
+                'royalty_download': 0,
                 'total_royalty': item['total_royalti'],
                 'rate_royalti': item['rate_royalti']
             })
@@ -113,10 +109,6 @@ def get_royalty_info(request):
 @api_view(['GET'])
 @require_authentication
 def get_label_royalty_info(request):
-    """
-    Feature 14: Get royalty information for label
-    GET /api/royalty/label/
-    """
     try:
         email = request.user_email
         if not email:
@@ -168,7 +160,7 @@ def get_label_royalty_info(request):
                 'total_play': item['total_play'],
                 'total_download': item['total_download'],
                 'royalty_play': item['total_royalti'],
-                'royalty_download': 0,  # Download royalty can be calculated separately if needed
+                'royalty_download': 0,
                 'total_royalty': item['total_royalti'],
                 'rate_royalti': item['rate_royalti']
             })
@@ -193,10 +185,6 @@ def get_label_royalty_info(request):
 @api_view(['POST'])
 @require_authentication
 def update_royalty_info(request):
-    """
-    Update royalty information by recalculating based on current play counts
-    POST /api/royalty/update/
-    """
     try:
         email = request.user_email
         if not email:

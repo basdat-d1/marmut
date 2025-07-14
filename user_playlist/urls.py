@@ -4,7 +4,6 @@ from . import views
 app_name = 'user_playlist'
 
 urlpatterns = [
-    # REST API endpoints
     path('', views.get_user_playlists, name='get_user_playlists_api'),
     path('create/', views.create_playlist, name='create_playlist_api'),
     path('<str:playlist_id>/', views.get_playlist_detail, name='get_playlist_detail_api'),

@@ -4,7 +4,7 @@ from django.db import transaction
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from utils.database import execute_query, execute_single_query, execute_insert_query, execute_delete_query, execute_update_query
+from utils.database import execute_query, execute_single_query
 from utils.authentication import require_authentication
 
 def convert_duration(total_minutes):

@@ -87,7 +87,6 @@ def create_podcast(request):
         podcast_genres = data.get('genres', [])
         if not isinstance(podcast_genres, list):
             podcast_genres = []
-        # deskripsi = data.get('deskripsi', '').strip()  # Optional, not used in DB
         
         if not podcast_title or not podcast_genres:
             return Response({'error': 'Title and at least one genre are required'}, status=status.HTTP_400_BAD_REQUEST)

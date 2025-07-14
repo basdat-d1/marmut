@@ -9,10 +9,6 @@ from utils.authentication import require_authentication
 @api_view(['GET'])
 @require_authentication
 def get_packages(request):
-    """
-    Feature 7: Get all available subscription packages
-    GET /api/subscription/packages/
-    """
     try:
         packages_query = """
             SELECT jenis, harga
@@ -49,10 +45,6 @@ def get_packages(request):
 @api_view(['GET'])
 @require_authentication
 def get_user_subscription(request):
-    """
-    Feature 7: Get user's current subscription
-    GET /api/subscription/
-    """
     try:
         email = request.user_email
         if not email:
@@ -105,10 +97,6 @@ def get_user_subscription(request):
 @api_view(['POST'])
 @require_authentication
 def subscribe_package(request):
-    """
-    Feature 7: Subscribe to a package
-    POST /api/subscription/subscribe/
-    """
     try:
         user_email = request.user_email
         data = request.data
@@ -214,10 +202,6 @@ def subscribe_package(request):
 @api_view(['POST'])
 @require_authentication
 def cancel_subscription(request):
-    """
-    Feature 7: Cancel current subscription
-    POST /api/subscription/cancel/
-    """
     try:
         user_email = request.user_email
         
@@ -251,10 +235,6 @@ def cancel_subscription(request):
 @api_view(['GET'])
 @require_authentication
 def get_subscription_history(request):
-    """
-    Feature 7: Get user's subscription history
-    GET /api/subscription/history/
-    """
     try:
         email = request.user_email
         if not email:
@@ -293,10 +273,6 @@ def get_subscription_history(request):
 @api_view(['GET'])
 @require_authentication
 def transaction_history(request):
-    """
-    Feature 7: Get user's transaction history
-    GET /api/subscription/transaction-history/
-    """
     try:
         user_email = request.user_email
         
@@ -335,10 +311,6 @@ def transaction_history(request):
 @api_view(['GET'])
 @require_authentication
 def current_subscription(request):
-    """
-    Get current active subscription
-    GET /api/subscription/current/
-    """
     try:
         user_email = request.user_email
         
@@ -394,10 +366,6 @@ def current_subscription(request):
 @api_view(['GET'])
 @require_authentication
 def payment_methods(request):
-    """
-    Get available payment methods
-    GET /api/subscription/payment-methods/
-    """
     try:
         # Static payment methods - in real system, this might come from database
         payment_methods = [
@@ -427,5 +395,3 @@ def payment_methods(request):
         return Response({
             'error': f'Terjadi kesalahan: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-

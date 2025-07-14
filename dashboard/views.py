@@ -7,10 +7,6 @@ from utils.authentication import require_authentication
 @api_view(['GET'])
 @require_authentication
 def dashboard(request):
-    """
-    Feature 4: Dashboard for all user types
-    GET /api/dashboard/
-    """
     try:
         user_email = request.user_email
         user_type = request.user_type
@@ -238,14 +234,20 @@ def get_label_dashboard(user_email):
                 'error': 'Label tidak ditemukan'
             }, status=status.HTTP_404_NOT_FOUND)
         
-        # Get albums under this label
         albums_query = """
-            SELECT a.id, a.judul, a.jumlah_lagu, a.total_durasi, 
-                   COUNT(s.id_konten) as total_songs
+            SELECT a.id, a.judul, 
+                   COUNT(s.id_konten) as jumlah_lagu,
+                   COALESCE((SELECT SUM(k.durasi) FROM KONTEN k JOIN SONG s2 ON k.id = s2.id_konten WHERE s2.id_album = a.id), 0) as total_durasi,
+                   (SELECT k2.tanggal_rilis 
+                    FROM KONTEN k2 
+                    JOIN SONG s2 ON k2.id = s2.id_konten 
+                    WHERE s2.id_album = a.id 
+                    ORDER BY k2.tanggal_rilis ASC 
+                    LIMIT 1) as tanggal_rilis
             FROM ALBUM a
             LEFT JOIN SONG s ON a.id = s.id_album
             WHERE a.id_label = %s
-            GROUP BY a.id, a.judul, a.jumlah_lagu, a.total_durasi
+            GROUP BY a.id, a.judul
             ORDER BY a.judul
         """
         albums = fetch_all(albums_query, [label['id']])
@@ -275,7 +277,7 @@ def get_label_dashboard(user_email):
                 'judul': album['judul'],
                 'jumlah_lagu': album['jumlah_lagu'],
                 'total_durasi': album['total_durasi'],
-                'total_songs': album['total_songs'] or 0
+                'tanggal_rilis': album['tanggal_rilis'].strftime('%Y-%m-%d') if album['tanggal_rilis'] else None
             })
         
         return Response(dashboard_data)
@@ -288,10 +290,6 @@ def get_label_dashboard(user_email):
 @api_view(['GET'])
 @require_authentication
 def user_stats(request):
-    """
-    Get user statistics
-    GET /api/dashboard/stats/
-    """
     try:
         user_email = request.user_email
         user_roles = request.user_roles

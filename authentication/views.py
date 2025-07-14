@@ -1,13 +1,10 @@
-from django.http import JsonResponse
 from django.views.decorators.csrf import ensure_csrf_cookie
-from django.contrib.sessions.models import Session
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from utils.database import execute_query, fetch_one
 from utils.authentication import require_authentication, allow_any
 import uuid
-from datetime import datetime, date
 from django.db import transaction, connection
 
 @ensure_csrf_cookie
@@ -20,10 +17,6 @@ def get_csrf_token(request):
 @api_view(['POST'])
 @allow_any
 def login_user(request):
-    """
-    Feature 2: Login functionality
-    POST /api/auth/login/
-    """
     try:
         data = request.data
         email = data.get('email')
@@ -34,29 +27,15 @@ def login_user(request):
                 'error': 'Email dan password harus diisi'
             }, status=status.HTTP_400_BAD_REQUEST)
         
-        # Check if user exists in AKUN table
-        user_query = """
-            SELECT email, password, nama, is_verified, kota_asal, gender, 
-                   tempat_lahir, tanggal_lahir
-            FROM AKUN 
+        # Check if it's a label FIRST (labels should not be in AKUN table)
+        label_query = """
+            SELECT email, password, nama, kontak
+            FROM LABEL 
             WHERE email = %s AND password = %s
         """
-        user = fetch_one(user_query, [email, password])
+        label = fetch_one(label_query, [email, password])
         
-        if not user:
-            # Check if it's a label
-            label_query = """
-                SELECT email, password, nama, kontak
-                FROM LABEL 
-                WHERE email = %s AND password = %s
-            """
-            label = fetch_one(label_query, [email, password])
-            
-            if not label:
-                return Response({
-                    'error': 'Email atau password salah'
-                }, status=status.HTTP_401_UNAUTHORIZED)
-            
+        if label:
             # Label login
             request.session['user_email'] = label['email']
             request.session['user_type'] = 'label'
@@ -70,6 +49,20 @@ def login_user(request):
                     'kontak': label['kontak']
                 }
             })
+        
+        # Check if user exists in AKUN table (only if not a label)
+        user_query = """
+            SELECT email, password, nama, is_verified, kota_asal, gender, 
+                   tempat_lahir, tanggal_lahir
+            FROM AKUN 
+            WHERE email = %s AND password = %s
+        """
+        user = fetch_one(user_query, [email, password])
+        
+        if not user:
+            return Response({
+                'error': 'Email atau password salah'
+            }, status=status.HTTP_401_UNAUTHORIZED)
         
         # User login - determine roles
         roles = []
@@ -130,10 +123,6 @@ def login_user(request):
 @api_view(['POST'])
 @require_authentication
 def logout_user(request):
-    """
-    Feature 2: Logout functionality
-    POST /api/auth/logout/
-    """
     try:
         request.session.flush()
         return Response({'message': 'Logout berhasil'})
@@ -145,10 +134,6 @@ def logout_user(request):
 @api_view(['GET'])
 @require_authentication
 def current_user(request):
-    """
-    Get current user information
-    GET /api/auth/me/
-    """
     try:
         user_email = request.user_email
         user_roles = request.user_roles
@@ -187,7 +172,7 @@ def current_user(request):
                 'error': 'User tidak ditemukan'
             }, status=status.HTTP_404_NOT_FOUND)
         
-        # Check premium status from database (not session)
+        # Check premium status from database
         premium_query = "SELECT email FROM PREMIUM WHERE email = %s"
         is_premium = bool(fetch_one(premium_query, [user_email]))
         
@@ -222,10 +207,6 @@ def current_user(request):
 @api_view(['POST'])
 @allow_any
 def register_user(request):
-    """
-    Feature 3: User Registration
-    POST /api/auth/register/user/
-    """
     try:
         data = request.data
         email = data.get('email')
@@ -296,10 +277,6 @@ def register_user(request):
 @api_view(['POST'])
 @allow_any
 def register_label(request):
-    """
-    Feature 3: Label Registration
-    POST /api/auth/register/label/
-    """
     try:
         data = request.data
         

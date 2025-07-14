@@ -7,10 +7,6 @@ from utils.database import execute_query, execute_single_query, fetch_all
 @api_view(['GET'])
 @require_authentication
 def search(request):
-    """
-    Feature 7: Search for songs, podcasts, and user playlists
-    GET /api/search/?q=query
-    """
     try:
         query = request.GET.get('q', '').strip()
         
@@ -125,10 +121,6 @@ def search(request):
 @api_view(['GET'])
 @require_authentication
 def search_songs(request):
-    """
-    Search specifically for songs
-    GET /api/search/songs/?q=query
-    """
     try:
         query = request.GET.get('q', '').strip()
         
@@ -176,10 +168,6 @@ def search_songs(request):
 @api_view(['GET'])
 @require_authentication
 def search_podcasts(request):
-    """
-    Search specifically for podcasts
-    GET /api/search/podcasts/?q=query
-    """
     try:
         query = request.GET.get('q', '').strip()
         
@@ -226,10 +214,6 @@ def search_podcasts(request):
 @api_view(['GET'])
 @require_authentication
 def search_playlists(request):
-    """
-    Search specifically for user playlists
-    GET /api/search/playlists/?q=query
-    """
     try:
         query = request.GET.get('q', '').strip()
         

@@ -1,9 +1,4 @@
 from django.urls import path
-from . import views
-
-app_name = 'daftar_album_song'
-
-# Explicit view imports to ensure they're loaded
 from .views import (
     get_albums, get_album_detail, get_songs, get_popular_songs, get_new_releases,
     get_user_albums, get_user_songs, create_album, create_song,
@@ -12,8 +7,9 @@ from .views import (
     get_all_songwriters, get_all_genres
 )
 
+app_name = 'daftar_album_song'
+
 urlpatterns = [
-    # REST API endpoints
     path('albums/', get_albums, name='get_albums_api'),
     path('albums/<str:album_id>/', get_album_detail, name='album_detail_api'),
     path('songs/', get_songs, name='get_songs_api'),
@@ -21,7 +17,6 @@ urlpatterns = [
     path('songs/popular/', get_popular_songs, name='popular_songs_api'),
     path('songs/new/', get_new_releases, name='new_releases_api'),
     
-    # Feature 13: Artist/Songwriter Album & Song Management
     path('user-albums/', get_user_albums, name='get_user_albums_api'),
     path('user-songs/', get_user_songs, name='get_user_songs_api'),
     path('create-album/', create_album, name='create_album_api'),
@@ -30,7 +25,6 @@ urlpatterns = [
 
     path('song/<str:song_id>/delete/', delete_song, name='delete_song_api'),
     
-    # Feature 16: Label Album & Song Management
     path('label-albums/', get_label_albums, name='get_label_albums_api'),
     path('label-album/<str:album_id>/songs/', get_label_album_songs, name='get_label_album_songs_api'),
     path('label-album/<str:album_id>/delete/', delete_label_album, name='delete_label_album_api'),

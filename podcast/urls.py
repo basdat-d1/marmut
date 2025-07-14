@@ -4,7 +4,6 @@ from . import views
 app_name = 'podcast'
 
 urlpatterns = [
-    # REST API endpoints
     path('', views.get_user_podcasts, name='get_user_podcasts_api'),
     path('create/', views.create_podcast, name='create_podcast_api'),
     path('<str:podcast_id>/', views.get_podcast_detail, name='get_podcast_detail_api'),

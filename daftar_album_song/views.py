@@ -3,7 +3,7 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from utils.authentication import require_authentication
-from utils.database import execute_query, execute_single_query, execute_insert_query, execute_update_query, execute_delete_query
+from utils.database import execute_query, execute_single_query
 from django.db import transaction
 import uuid
 
@@ -48,7 +48,6 @@ def get_album_detail(request, album_id):
     """Get album details with songs or delete album"""
     try:
         if request.method == 'DELETE':
-            # Handle DELETE request - same logic as delete_album
             email = request.user_email
             if not email:
                 return Response({'error': 'Not authenticated'}, status=status.HTTP_401_UNAUTHORIZED)
@@ -86,7 +85,6 @@ def get_album_detail(request, album_id):
                 'message': 'Album berhasil dihapus'
             }, status=status.HTTP_200_OK)
         
-        # Handle GET request - original logic
         # Get album info
         album = execute_single_query(
             """SELECT a.id, a.judul, l.nama as label, a.jumlah_lagu, a.total_durasi
@@ -242,10 +240,6 @@ def get_new_releases(request):
 @api_view(['GET'])
 @require_authentication
 def get_user_albums(request):
-    """
-    Feature 13: Get albums owned by the authenticated artist/songwriter
-    GET /api/album-song/user-albums/
-    """
     try:
         email = request.user_email
         if not email:
@@ -302,10 +296,6 @@ def get_user_albums(request):
 @api_view(['POST'])
 @require_authentication
 def create_album(request):
-    """
-    Feature 13: Create a new album
-    POST /api/album-song/create-album/
-    """
     try:
         email = request.user_email
         if not email:
@@ -361,10 +351,6 @@ def create_album(request):
 @api_view(['POST'])
 @require_authentication
 def create_song(request):
-    """
-    Feature 13: Create a new song
-    POST /api/album-song/create-song/
-    """
     try:
         email = request.user_email
         if not email:
@@ -478,10 +464,6 @@ def create_song(request):
 @api_view(['DELETE'])
 @require_authentication
 def delete_album(request, album_id):
-    """
-    Feature 13: Delete an album
-    DELETE /api/album-song/album/{album_id}/
-    """
     try:
         email = request.user_email
         if not email:
@@ -526,10 +508,6 @@ def delete_album(request, album_id):
 @api_view(['DELETE'])
 @require_authentication
 def delete_song(request, song_id):
-    """
-    Feature 13: Delete a song
-    DELETE /api/album-song/song/{song_id}/
-    """
     try:
         email = request.user_email
         if not email:
@@ -562,9 +540,7 @@ def delete_song(request, song_id):
         if not song:
             return Response({'error': 'Song tidak ditemukan atau tidak memiliki izin'}, status=status.HTTP_404_NOT_FOUND)
         
-        # Album stats are automatically updated by database trigger
-        
-        # Delete song (cascade will handle related records)
+        # Delete song
         execute_query("DELETE FROM KONTEN WHERE id = %s", [song_id], fetch=False)
         
         return Response({
@@ -577,10 +553,6 @@ def delete_song(request, song_id):
 @api_view(['GET'])
 @require_authentication
 def get_label_albums(request):
-    """
-    Feature 16: Get albums owned by the authenticated label
-    GET /api/album-song/label-albums/
-    """
     try:
         email = request.user_email
         if not email:
@@ -597,16 +569,22 @@ def get_label_albums(request):
         
         # Get albums owned by the label
         albums = execute_query(
-            """SELECT a.id, a.judul, a.jumlah_lagu, a.total_durasi,
-                      (SELECT k.tanggal_rilis 
-                       FROM KONTEN k 
-                       JOIN SONG s ON k.id = s.id_konten 
-                       WHERE s.id_album = a.id 
-                       ORDER BY k.tanggal_rilis ASC 
-                       LIMIT 1) as tanggal_rilis
-               FROM ALBUM a
-               WHERE a.id_label = %s
-               ORDER BY a.judul""",
+            """
+            SELECT a.id, a.judul, 
+                   COUNT(s.id_konten) as jumlah_lagu,
+                   COALESCE((SELECT SUM(k.durasi) FROM KONTEN k JOIN SONG s2 ON k.id = s2.id_konten WHERE s2.id_album = a.id), 0) as total_durasi,
+                   (SELECT k2.tanggal_rilis 
+                    FROM KONTEN k2 
+                    JOIN SONG s2 ON k2.id = s2.id_konten 
+                    WHERE s2.id_album = a.id 
+                    ORDER BY k2.tanggal_rilis ASC 
+                    LIMIT 1) as tanggal_rilis
+            FROM ALBUM a
+            LEFT JOIN SONG s ON a.id = s.id_album
+            WHERE a.id_label = %s
+            GROUP BY a.id, a.judul
+            ORDER BY a.judul
+            """,
             [label['id']]
         )
         
@@ -628,10 +606,6 @@ def get_label_albums(request):
 @api_view(['GET'])
 @require_authentication
 def get_label_album_songs(request, album_id):
-    """
-    Feature 16: Get songs in a label's album
-    GET /api/album-song/label-album/{album_id}/songs/
-    """
     try:
         email = request.user_email
         if not email:
@@ -690,10 +664,6 @@ def get_label_album_songs(request, album_id):
 @api_view(['DELETE'])
 @require_authentication
 def delete_label_album(request, album_id):
-    """
-    Feature 16: Delete a label's album
-    DELETE /api/album-song/label-album/{album_id}/
-    """
     try:
         email = request.user_email
         if not email:
@@ -730,10 +700,6 @@ def delete_label_album(request, album_id):
 @api_view(['DELETE'])
 @require_authentication
 def delete_label_song(request, song_id):
-    """
-    Feature 16: Delete a song from a label's album
-    DELETE /api/album-song/label-song/{song_id}/
-    """
     try:
         email = request.user_email
         if not email:
@@ -760,10 +726,8 @@ def delete_label_song(request, song_id):
         
         if not song:
             return Response({'error': 'Song tidak ditemukan atau tidak memiliki izin'}, status=status.HTTP_404_NOT_FOUND)
-        
-        # Album stats are automatically updated by database trigger
-        
-        # Delete song (cascade will handle related records)
+
+        # Delete song
         execute_query("DELETE FROM KONTEN WHERE id = %s", [song_id], fetch=False)
         
         return Response({
@@ -776,10 +740,6 @@ def delete_label_song(request, song_id):
 @api_view(['GET'])
 @require_authentication
 def get_user_songs(request):
-    """
-    Get songs owned by the authenticated artist/songwriter
-    GET /api/album-song/user-songs/
-    """
     try:
         email = request.user_email
         if not email:

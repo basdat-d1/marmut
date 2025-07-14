@@ -18,11 +18,6 @@ def convert_duration(total_minutes):
 @api_view(['GET', 'POST'])
 @require_authentication
 def play_user_playlist(request, id_user_playlist):
-    """
-    Feature 11: Get playlist details and handle playlist play
-    GET /api/play-user-playlist/{id_user_playlist}/
-    POST /api/play-user-playlist/{id_user_playlist}/
-    """
     try:
         email = request.user_email
         if not email:
@@ -112,10 +107,6 @@ def play_user_playlist(request, id_user_playlist):
 @api_view(['POST'])
 @require_authentication
 def play_song_from_playlist(request, id_user_playlist, song_id):
-    """
-    Feature 11: Play individual song from playlist
-    POST /api/play-user-playlist/{id_user_playlist}/song/{song_id}/
-    """
     try:
         email = request.user_email
         if not email:

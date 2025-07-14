@@ -4,7 +4,6 @@ from . import views
 app_name = 'lihat_chart'
 
 urlpatterns = [
-    # REST API endpoints
     path('', views.get_charts, name='get_charts_api'),
     path('<str:chart_type>/', views.get_chart_detail, name='chart_detail_api'),
     path('trending/songs/', views.get_trending_songs, name='trending_songs_api'),

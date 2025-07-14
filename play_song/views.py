@@ -3,7 +3,7 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from utils.authentication import require_authentication
-from utils.database import execute_query, execute_single_query, execute_insert_query, execute_update_query
+from utils.database import execute_query, execute_single_query, execute_insert_query
 
 @api_view(['GET'])
 @require_authentication
@@ -20,7 +20,8 @@ def get_song_detail(request, song_id):
                       array_agg(DISTINCT g.genre) AS genres,
                       ak.nama AS artist,
                       s.total_play, s.total_download,
-                      a.judul AS album_judul
+                      a.judul AS album_judul,
+                      a.id_label
                FROM KONTEN k
                JOIN SONG s ON k.id = s.id_konten
                JOIN ARTIST ar ON s.id_artist = ar.id
@@ -28,12 +29,21 @@ def get_song_detail(request, song_id):
                LEFT JOIN GENRE g ON k.id = g.id_konten
                JOIN ALBUM a ON s.id_album = a.id
                WHERE k.id = %s
-               GROUP BY k.id, k.judul, k.durasi, k.tanggal_rilis, k.tahun, ak.nama, s.total_play, s.total_download, a.judul""",
+               GROUP BY k.id, k.judul, k.durasi, k.tanggal_rilis, k.tahun, ak.nama, s.total_play, s.total_download, a.judul, a.id_label""",
             [song_id]
         )
         
         if not song:
             return Response({'error': 'Song not found'}, status=status.HTTP_404_NOT_FOUND)
+    
+        # If user is a label, check if this song belongs to their album
+        label = execute_single_query(
+            "SELECT id FROM LABEL WHERE email = %s",
+            [email]
+        )
+        if label:
+            if str(song['id_label']) != str(label['id']):
+                return Response({'error': 'Access denied: this song does not belong to your label'}, status=status.HTTP_403_FORBIDDEN)
         
         # Get songwriters
         songwriters = execute_query(
@@ -83,10 +93,6 @@ def get_song_detail(request, song_id):
 @api_view(['POST'])
 @require_authentication
 def play_song(request, song_id):
-    """
-    Feature 8: Record a song play with progress tracking
-    POST /api/play-song/{song_id}/
-    """
     try:
         email = request.user_email
         if not email:
@@ -181,12 +187,6 @@ def download_song(request, song_id):
             "INSERT INTO DOWNLOADED_SONG (email_downloader, id_song) VALUES (%s, %s)",
             [email, song_id]
         )
-        
-        # Update download count (handled by trigger)
-        # execute_update_query(
-        #     "UPDATE SONG SET total_download = total_download + 1 WHERE id_konten = %s",
-        #     [song_id]
-        # )
         
         return Response({'message': 'Song downloaded successfully', 'success': True}, status=status.HTTP_201_CREATED)
         

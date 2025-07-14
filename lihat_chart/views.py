@@ -7,10 +7,6 @@ from utils.database import execute_query
 @api_view(['GET'])
 @require_authentication
 def get_charts(request):
-    """
-    Feature 12: Get all available chart types
-    GET /api/chart/
-    """
     try:
         # Return predefined chart types
         chart_types = [
@@ -30,10 +26,6 @@ def get_charts(request):
 @api_view(['GET'])
 @require_authentication
 def get_chart_detail(request, chart_type):
-    """
-    Feature 12: Get chart details by type
-    GET /api/chart/{chart_type}/
-    """
     try:
         # Get chart items based on type
         if chart_type == 'Daily Top 20':
