@@ -7,6 +7,10 @@
   ],
   "routes": [
     {
+      "src": "/static/(.*)",
+      "dest": "/staticfiles/$1"
+    },
+    {
       "src": "/(.*)",
       "dest": "marmut_app/wsgi.py"
     }
@@ -14,5 +18,6 @@
   "env": {
     "PYTHONPATH": ".",
     "DJANGO_SETTINGS_MODULE": "marmut_app.settings"
-  }
+  },
+  "buildCommand": "chmod +x build_files.sh && ./build_files.sh"
 } 
