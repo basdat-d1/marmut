@@ -64,31 +64,36 @@ def login_user(request):
                 'error': 'Email atau password salah'
             }, status=status.HTTP_401_UNAUTHORIZED)
         
-        # User login - determine roles
+        # User login
+        roles_query = """
+            SELECT 
+                CASE WHEN a.id IS NOT NULL THEN 'artist' END as artist_role,
+                CASE WHEN s.id IS NOT NULL THEN 'songwriter' END as songwriter_role,
+                CASE WHEN p.email IS NOT NULL THEN 'podcaster' END as podcaster_role,
+                CASE WHEN pr.email IS NOT NULL THEN true ELSE false END as is_premium
+            FROM AKUN ak
+            LEFT JOIN ARTIST a ON a.email_akun = ak.email
+            LEFT JOIN SONGWRITER s ON s.email_akun = ak.email
+            LEFT JOIN PODCASTER p ON p.email = ak.email
+            LEFT JOIN PREMIUM pr ON pr.email = ak.email
+            WHERE ak.email = %s
+        """
+        roles_result = fetch_one(roles_query, [email])
+        
+        # Build roles list
         roles = []
-        
-        # Check if user is Artist
-        artist_query = "SELECT id FROM ARTIST WHERE email_akun = %s"
-        if fetch_one(artist_query, [email]):
+        if roles_result and roles_result['artist_role']:
             roles.append('artist')
-        
-        # Check if user is Songwriter
-        songwriter_query = "SELECT id FROM SONGWRITER WHERE email_akun = %s"
-        if fetch_one(songwriter_query, [email]):
+        if roles_result and roles_result['songwriter_role']:
             roles.append('songwriter')
-        
-        # Check if user is Podcaster
-        podcaster_query = "SELECT email FROM PODCASTER WHERE email = %s"
-        if fetch_one(podcaster_query, [email]):
+        if roles_result and roles_result['podcaster_role']:
             roles.append('podcaster')
         
         # Default role is 'user' if no specific roles
         if not roles:
             roles = ['user']
         
-        # Check premium status
-        premium_query = "SELECT email FROM PREMIUM WHERE email = %s"
-        is_premium = bool(fetch_one(premium_query, [email]))
+        is_premium = bool(roles_result and roles_result['is_premium'])
         
         # Store session
         request.session['user_email'] = user['email']
@@ -160,10 +165,13 @@ def current_user(request):
         
         # Regular user
         user_query = """
-            SELECT email, nama, is_verified, kota_asal, gender, 
-                   tempat_lahir, tanggal_lahir
-            FROM AKUN 
-            WHERE email = %s
+            SELECT 
+                ak.email, ak.nama, ak.is_verified, ak.kota_asal, ak.gender, 
+                ak.tempat_lahir, ak.tanggal_lahir,
+                CASE WHEN pr.email IS NOT NULL THEN true ELSE false END as is_premium
+            FROM AKUN ak
+            LEFT JOIN PREMIUM pr ON pr.email = ak.email
+            WHERE ak.email = %s
         """
         user = fetch_one(user_query, [user_email])
         
@@ -172,9 +180,7 @@ def current_user(request):
                 'error': 'User tidak ditemukan'
             }, status=status.HTTP_404_NOT_FOUND)
         
-        # Check premium status from database (not session)
-        premium_query = "SELECT email FROM PREMIUM WHERE email = %s"
-        is_premium = bool(fetch_one(premium_query, [user_email]))
+        is_premium = bool(user['is_premium'])
         
         # Sync session with database if there's a mismatch
         session_premium = request.session.get('is_premium', False)

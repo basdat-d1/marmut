@@ -5,11 +5,11 @@
 -- Run this file after creating tables and triggers
 
 -- ===================================
--- 1. AKUN - 50 records (minimal 35 verified)
+-- 1. AKUN - 45 records (minimal 30 verified)
 -- ===================================
 
 INSERT INTO AKUN (email, password, nama, gender, tempat_lahir, tanggal_lahir, is_verified, kota_asal) VALUES
--- Verified users (35+)
+-- Verified users (30)
 ('user1@marmut.com', 'pass123', 'Ahmad Rahman', 1, 'Jakarta', '1995-01-15', TRUE, 'Jakarta'),
 ('user2@marmut.com', 'pass123', 'Siti Nurhaliza', 0, 'Bandung', '1992-03-20', TRUE, 'Bandung'),
 ('user3@marmut.com', 'pass123', 'Budi Santoso', 1, 'Surabaya', '1988-07-10', TRUE, 'Surabaya'),
@@ -35,12 +35,6 @@ INSERT INTO AKUN (email, password, nama, gender, tempat_lahir, tanggal_lahir, is
 ('podcaster3@marmut.com', 'pass123', 'Raditya Dika', 1, 'Jakarta', '1984-12-28', TRUE, 'Jakarta'),
 ('podcaster4@marmut.com', 'pass123', 'Cameo Project', 1, 'Jakarta', '1985-03-15', TRUE, 'Jakarta'),
 ('podcaster5@marmut.com', 'pass123', 'Arief Muhammad', 1, 'Bandung', '1987-01-22', TRUE, 'Bandung'),
-('label1@marmut.com', 'pass123', 'Universal Music', 1, 'Jakarta', '1980-01-01', TRUE, 'Jakarta'),
-('label2@marmut.com', 'pass123', 'Sony Music', 0, 'Jakarta', '1982-01-01', TRUE, 'Jakarta'),
-('label3@marmut.com', 'pass123', 'Warner Music', 1, 'Jakarta', '1985-01-01', TRUE, 'Jakarta'),
-('label4@marmut.com', 'pass123', 'Aquarius Music', 0, 'Jakarta', '1990-01-01', TRUE, 'Jakarta'),
-('label5@marmut.com', 'pass123', 'Trinity Optima', 1, 'Jakarta', '1995-01-01', TRUE, 'Jakarta'),
-('user11@marmut.com', 'pass123', 'Kartika Sari', 0, 'Balikpapan', '1992-10-10', TRUE, 'Balikpapan'),
 ('user12@marmut.com', 'pass123', 'Lukman Hakim', 1, 'Pontianak', '1988-12-12', TRUE, 'Pontianak'),
 ('user13@marmut.com', 'pass123', 'Maya Indira', 0, 'Manado', '1995-05-05', TRUE, 'Manado'),
 ('user14@marmut.com', 'pass123', 'Nanda Pratama', 1, 'Pekanbaru', '1991-07-07', TRUE, 'Pekanbaru'),
@@ -540,30 +534,14 @@ INSERT INTO PLAYLIST_SONG (id_playlist, id_song) VALUES
 ((SELECT id FROM PLAYLIST OFFSET 1 LIMIT 1), (SELECT id_konten FROM SONG WHERE id_konten = (SELECT id FROM KONTEN WHERE judul = 'Memori Indah' LIMIT 1) LIMIT 1));
 
 -- ===================================
--- CHART - 20 records
+-- CHART - 4 records
 -- ===================================
 
 INSERT INTO CHART (tipe, id_playlist) VALUES
 ('Daily Top 50', (SELECT id FROM PLAYLIST LIMIT 1)),
 ('Weekly Top 50', (SELECT id FROM PLAYLIST OFFSET 1 LIMIT 1)),
 ('Monthly Top 50', (SELECT id FROM PLAYLIST OFFSET 2 LIMIT 1)),
-('Yearly Top 50', (SELECT id FROM PLAYLIST OFFSET 3 LIMIT 1)),
-('Pop Chart', (SELECT id FROM PLAYLIST OFFSET 4 LIMIT 1)),
-('Rock Chart', (SELECT id FROM PLAYLIST OFFSET 5 LIMIT 1)),
-('Ballad Chart', (SELECT id FROM PLAYLIST OFFSET 6 LIMIT 1)),
-('Indonesian Chart', (SELECT id FROM PLAYLIST OFFSET 7 LIMIT 1)),
-('Love Songs Chart', (SELECT id FROM PLAYLIST OFFSET 8 LIMIT 1)),
-('Motivational Chart', (SELECT id FROM PLAYLIST OFFSET 9 LIMIT 1)),
-('Chill Chart', (SELECT id FROM PLAYLIST OFFSET 10 LIMIT 1)),
-('Party Chart', (SELECT id FROM PLAYLIST OFFSET 11 LIMIT 1)),
-('Acoustic Chart', (SELECT id FROM PLAYLIST OFFSET 12 LIMIT 1)),
-('Nostalgic Chart', (SELECT id FROM PLAYLIST OFFSET 13 LIMIT 1)),
-('Happy Chart', (SELECT id FROM PLAYLIST OFFSET 14 LIMIT 1)),
-('Relaxation Chart', (SELECT id FROM PLAYLIST OFFSET 15 LIMIT 1)),
-('Study Chart', (SELECT id FROM PLAYLIST OFFSET 16 LIMIT 1)),
-('Workout Chart', (SELECT id FROM PLAYLIST OFFSET 17 LIMIT 1)),
-('Road Trip Chart', (SELECT id FROM PLAYLIST OFFSET 18 LIMIT 1)),
-('Night Chart', (SELECT id FROM PLAYLIST OFFSET 19 LIMIT 1));
+('Yearly Top 50', (SELECT id FROM PLAYLIST OFFSET 3 LIMIT 1));
 
 -- ===================================
 -- AKUN_PLAY_SONG - 51 records

@@ -306,6 +306,16 @@ CREATE INDEX IF NOT EXISTS idx_akun_email ON AKUN(email);
 CREATE INDEX IF NOT EXISTS idx_premium_email ON PREMIUM(email);
 CREATE INDEX IF NOT EXISTS idx_nonpremium_email ON NONPREMIUM(email);
 CREATE INDEX IF NOT EXISTS idx_label_email ON LABEL(email);
+CREATE INDEX IF NOT EXISTS idx_akun_email_password ON AKUN(email, password);
+CREATE INDEX IF NOT EXISTS idx_label_email_password ON LABEL(email, password);
+
+-- Indexes for role tables
+CREATE INDEX IF NOT EXISTS idx_artist_email_akun ON ARTIST(email_akun);
+CREATE INDEX IF NOT EXISTS idx_songwriter_email_akun ON SONGWRITER(email_akun);
+CREATE INDEX IF NOT EXISTS idx_podcaster_email ON PODCASTER(email);
+
+-- Composite indexes
+CREATE INDEX IF NOT EXISTS idx_akun_verified ON AKUN(email, is_verified);
 
 -- Content-based indexes
 CREATE INDEX IF NOT EXISTS idx_konten_judul ON KONTEN(judul);
@@ -402,6 +412,10 @@ WHERE total_play > 100;
 
 -- Optimize table statistics for better query planning
 ANALYZE AKUN;
+ANALYZE LABEL;
+ANALYZE ARTIST;
+ANALYZE SONGWRITER;
+ANALYZE PODCASTER;
 ANALYZE KONTEN;
 ANALYZE SONG;
 ANALYZE ALBUM;
