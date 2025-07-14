@@ -1,0 +1,42 @@
+name: Database Migration
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '**/migrations/**'
+      - '**/models.py'
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Install Vercel CLI
+        run: |
+          npm install -g vercel
+
+      - name: Run migrations on Vercel
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          vercel env pull .env.production.local
+          vercel --token ${{ secrets.VERCEL_TOKEN }} --prod --yes
+
+      - name: Collect static files
+        run: |
+          python manage.py collectstatic --noinput 

@@ -1,0 +1,23 @@
+{
+  "builds": [
+    {
+      "src": "marmut_app/wsgi.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "marmut_app/wsgi.py"
+    }
+  ],
+  "env": {
+    "PYTHONPATH": ".",
+    "DJANGO_SETTINGS_MODULE": "marmut_app.settings"
+  },
+  "functions": {
+    "marmut_app/wsgi.py": {
+      "runtime": "python3.11"
+    }
+  }
+} 
