@@ -217,7 +217,7 @@ def cancel_subscription(request):
         
         if not subscription:
             return Response({
-                'error': 'Tidak ada langganan aktif untuk dibatalkan'
+                'error': 'No active subscription to cancel'
             }, status=status.HTTP_404_NOT_FOUND)
         
         # For now, just return a message that subscription will end naturally
@@ -259,7 +259,7 @@ def get_subscription_history(request):
                 'metode_bayar': transaction['metode_bayar'],
                 'nominal': transaction['nominal'],
                 'nominal_formatted': f"Rp{transaction['nominal']:,}".replace(',', '.'),
-                'status': 'Aktif' if transaction['timestamp_berakhir'] > datetime.now() else 'Berakhir'
+                'status': 'Active' if transaction['timestamp_berakhir'] > datetime.now() else 'Expired'
             })
         
         return Response({
@@ -295,7 +295,7 @@ def transaction_history(request):
                 'metode_bayar': transaction['metode_bayar'],
                 'nominal': transaction['nominal'],
                 'nominal_formatted': f"Rp{transaction['nominal']:,}".replace(',', '.'),
-                'status': 'Aktif' if transaction['timestamp_berakhir'] > datetime.now() else 'Berakhir'
+                'status': 'Active' if transaction['timestamp_berakhir'] > datetime.now() else 'Expired'
             })
         
         return Response({
